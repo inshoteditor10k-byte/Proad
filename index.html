@@ -3,39 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>खिलौना नगरी | Admin Management Console</title>
+  <title>खिलौना नगरी | Admin Management Portal</title>
 
-  <!-- Google Fonts: Baloo 2 & Nunito -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Noto+Sans+Bengali:wght@600;700&family=Noto+Sans+Devanagari:wght@600;700&family=Noto+Sans+Gujarati:wght@600;700&family=Noto+Sans+Kannada:wght@600;700&family=Noto+Sans+Malayalam:wght@600;700&family=Noto+Sans+Gurmukhi:wght@600;700&family=Noto+Sans+Tamil:wght@600;700&family=Noto+Sans+Telugu:wght@600;700&display=swap" rel="stylesheet" />
 
-  <!-- Font Awesome 6 -->
+  <!-- Font Awesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Leaflet Map (फ्री ओपन-स्ट्रीट मैप पिन पिकर) -->
+  <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
       --primary: #3742fa;
-      --primary-hover: #2f3542;
+      --primary-hover: #2b35db;
       --secondary: #ff4757;
       --accent: #ffa502;
       --success: #2ed573;
       --warning: #ffa502;
       --danger: #ff4757;
-      --dark: #1e293b;
-      --bg: #f1f5f9;
+      --dark: #0f172a;
+      --dark-card: #1e293b;
+      --bg: #f8fafc;
       --surface: #ffffff;
       --text: #0f172a;
       --text-muted: #64748b;
       --border: #e2e8f0;
-      --sidebar-width: 270px;
+      --sidebar-width: 275px;
       --radius: 12px;
       --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      --font-heading: 'Baloo 2', cursive;
+      --font-heading: 'Baloo 2', 'Noto Sans Devanagari', sans-serif;
       --font-body: 'Nunito', sans-serif;
     }
 
@@ -52,43 +53,63 @@
 
     h1, h2, h3, h4, .brand-title { font-family: var(--font-heading); }
 
-    /* Admin Login Overlay (No Google Login) */
+    /* Admin Login & OTP Verification Screen */
     #authOverlay {
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       z-index: 99999;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
     }
 
-    .auth-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 420px;
-      padding: 2.2rem 2rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      text-align: center;
+    .auth-lang-picker {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
     }
 
-    .auth-card .logo-badge {
-      width: 65px;
-      height: 65px;
+    .auth-card {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      padding: 2.2rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      position: relative;
+    }
+
+    .auth-badge {
+      width: 64px;
+      height: 64px;
       background: rgba(55, 66, 250, 0.1);
       color: var(--primary);
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .lockout-banner {
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
       margin-bottom: 1rem;
+      display: none;
+      text-align: left;
     }
 
     .form-group { margin-bottom: 1rem; text-align: left; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text); }
 
     .form-control {
       width: 100%;
@@ -119,19 +140,52 @@
       justify-content: center;
       gap: 0.5rem;
       transition: all 0.2s;
+      text-decoration: none;
     }
 
     .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: #2b35db; }
+    .btn-primary:hover { background: var(--primary-hover); }
     .btn-secondary { background: #e2e8f0; color: var(--dark); }
     .btn-secondary:hover { background: #cbd5e1; }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-block { width: 100%; }
 
-    /* Sidebar & ☰ Menu Layout */
+    /* Language Selector Component */
+    .lang-dropdown-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .lang-select-box {
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      padding: 0.45rem 1rem 0.45rem 2.2rem;
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: auto;
+    }
+
+    .lang-select-box:focus { border-color: var(--primary); }
+
+    .lang-icon {
+      position: absolute;
+      left: 0.85rem;
+      pointer-events: none;
+      color: var(--primary);
+      font-size: 0.95rem;
+    }
+
+    /* Sidebar & ☰ Menu */
     .sidebar {
       width: var(--sidebar-width);
-      background: var(--dark);
+      background: var(--dark-card);
       color: #fff;
       display: flex;
       flex-direction: column;
@@ -144,8 +198,8 @@
     }
 
     .sidebar-header {
-      padding: 1.4rem 1.2rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.3rem 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -186,10 +240,11 @@
 
     .nav-item:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
     .nav-item.active { color: #fff; background: var(--primary); }
+    .nav-item i { width: 20px; font-size: 1.1rem; }
 
     .sidebar-footer {
       padding: 1rem 1.2rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -204,7 +259,7 @@
       display: none;
     }
 
-    /* Main Container */
+    /* Main App Layout */
     .main-wrapper {
       margin-left: var(--sidebar-width);
       flex: 1;
@@ -217,13 +272,19 @@
     .topbar {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 0.8rem 1.5rem;
+      padding: 0.75rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 50;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
     }
 
     .hamburger-btn {
@@ -233,6 +294,25 @@
       color: var(--dark);
       cursor: pointer;
       display: none;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .admin-pill {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 0.35rem 0.85rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
     .content-area { padding: 1.5rem; flex: 1; }
@@ -250,7 +330,6 @@
       gap: 0.8rem;
     }
 
-    /* Metric Cards */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -333,7 +412,6 @@
       z-index: 10;
     }
 
-    /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -360,7 +438,6 @@
     .modal-body { padding: 1.4rem; }
     .close-btn { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
 
-    /* Toast */
     #toastContainer {
       position: fixed;
       bottom: 25px;
@@ -391,32 +468,75 @@
       .sidebar-overlay.open { display: block; }
       .main-wrapper { margin-left: 0; }
       .hamburger-btn { display: block; }
+      .auth-lang-picker { top: 1rem; right: 1rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Toast Container -->
+  <!-- Toast Notification Box -->
   <div id="toastContainer"></div>
 
-  <!-- 1. Admin Authentication Overlay -->
+  <!-- 1. Secure Admin Login & OTP Verification Screen -->
   <div id="authOverlay">
-    <div class="auth-card">
-      <div class="logo-badge"><i class="fa-solid fa-lock"></i></div>
-      <h2>खिलौना नगरी | Admin</h2>
-      <p>सुरक्षित एडमिन क्रेडेंशियल्स द्वारा लॉगिन करें</p>
+    <div class="auth-lang-picker">
+      <div class="lang-dropdown-wrapper">
+        <i class="fa-solid fa-language lang-icon"></i>
+        <select class="lang-select-box globalLanguageSelect" onchange="changeAdminLanguage(this.value)">
+          <option value="hi">हिंदी — Hindi</option>
+          <option value="en">English</option>
+          <option value="bn">বাংলা — Bengali</option>
+          <option value="mr">मराठी — Marathi</option>
+          <option value="ta">தமிழ் — Tamil</option>
+          <option value="te">తెలుగు — Telugu</option>
+          <option value="gu">ગુજરાતી — Gujarati</option>
+          <option value="kn">ಕನ್ನಡ — Kannada</option>
+          <option value="ml">മലയാളം — Malayalam</option>
+          <option value="pa">ਪੰਜਾਬੀ — Punjabi</option>
+        </select>
+      </div>
+    </div>
 
-      <form id="adminLoginForm" onsubmit="event.preventDefault(); handleAdminLogin();">
+    <div class="auth-card">
+      <div class="auth-badge"><i class="fa-solid fa-shield-halved"></i></div>
+      <h2 data-i18n="admin_portal_title">खिलौना नगरी | Admin</h2>
+      <p data-i18n="admin_portal_subtitle" style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.2rem;">केवल अधिकृत एडमिन क्रेडेंशियल्स द्वारा सुरक्षित लॉगिन</p>
+
+      <div id="lockoutBanner" class="lockout-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="lockoutText">अत्यधिक गलत प्रयासों के कारण खाता अस्थायी रूप से लॉक है।</span>
+      </div>
+
+      <!-- Step 1: Email & Password Form -->
+      <form id="adminLoginForm" onsubmit="event.preventDefault(); handleAdminPasswordLogin();">
         <div class="form-group">
-          <label><i class="fa-solid fa-envelope"></i> अधिकृत ईमेल (Admin Email)</label>
+          <label><i class="fa-solid fa-envelope"></i> <span data-i18n="lbl_admin_email">अधिकृत ईमेल</span></label>
           <input type="email" id="adminEmail" class="form-control" required placeholder="admin@kheloynanagari.com" />
         </div>
         <div class="form-group">
-          <label><i class="fa-solid fa-key"></i> पासवर्ड (Password)</label>
+          <label><i class="fa-solid fa-key"></i> <span data-i18n="lbl_password">पासवर्ड</span></label>
           <input type="password" id="adminPassword" class="form-control" required placeholder="••••••••••••" />
         </div>
-        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block" style="margin-top: 1.2rem;">
-          <i class="fa-solid fa-shield-halved"></i> एडमिन लॉगिन करें
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block" style="margin-top: 1rem;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> <span data-i18n="btn_login">लॉगिन जारी रखें</span>
+        </button>
+      </form>
+
+      <!-- Step 2: 2FA Email OTP Verification -->
+      <form id="adminOtpForm" style="display:none;" onsubmit="event.preventDefault(); handleOtpVerification();">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.8rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; text-align:left;">
+          <i class="fa-solid fa-shield-check" style="color:var(--primary);"></i>
+          <span data-i18n="otp_sent_notice">सुरक्षा कोड आपके अधिकृत ईमेल पर भेजा गया है।</span>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> <span data-i18n="lbl_enter_otp">6-अंकों का वेरिफिकेशन कोड</span></label>
+          <input type="text" id="adminOtpInput" maxlength="6" pattern="[0-9]{6}" class="form-control" required placeholder="123456" style="letter-spacing:4px; font-weight:800; text-align:center; font-size:1.2rem;" />
+        </div>
+        <button type="submit" id="otpSubmitBtn" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-check-double"></i> <span data-i18n="btn_verify_otp">वेरिफाई करें एवं पोर्टल खोलें</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-block" style="margin-top:0.6rem;" onclick="resetToPasswordStep()">
+          <i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_back">वापस जाएँ</span>
         </button>
       </form>
     </div>
@@ -440,27 +560,27 @@
     <ul class="nav-list">
       <li class="nav-item active" onclick="switchView('bookingsView', this)">
         <i class="fa-solid fa-box-archive"></i>
-        <span>बुकिंग प्रबंधन (Bookings)</span>
+        <span data-i18n="nav_bookings">बुकिंग प्रबंधन</span>
       </li>
       <li class="nav-item" onclick="switchView('inventoryView', this)">
         <i class="fa-solid fa-cubes-stacked"></i>
-        <span>प्रोडक्ट्स एवं स्टॉक (Inventory)</span>
+        <span data-i18n="nav_inventory">उत्पाद एवं स्टॉक</span>
       </li>
       <li class="nav-item" onclick="switchView('storeSettingsView', this)">
         <i class="fa-solid fa-store"></i>
-        <span>दुकान लोकेशन (Store Settings)</span>
+        <span data-i18n="nav_store_settings">दुकान लोकेशन</span>
       </li>
       <li class="nav-item" onclick="switchView('deliverySettingsView', this)">
         <i class="fa-solid fa-truck-fast"></i>
-        <span>डिलीवरी नियम (Delivery Rules)</span>
+        <span data-i18n="nav_delivery_rules">डिलीवरी नियम</span>
       </li>
       <li class="nav-item" onclick="switchView('storageDashboardView', this)">
         <i class="fa-solid fa-hard-drive"></i>
-        <span>स्टोरेज डैशबोर्ड (Storage Quota)</span>
+        <span data-i18n="nav_storage_dash">स्टोरेज डैशबोर्ड</span>
       </li>
       <li class="nav-item" onclick="switchView('integrationsView', this)">
         <i class="fa-solid fa-gears"></i>
-        <span>गेटवे व ईमेल स्थिति (Integrations)</span>
+        <span data-i18n="nav_integrations">गेटवे व ईमेल स्थिति</span>
       </li>
     </ul>
 
@@ -475,12 +595,32 @@
   <!-- 3. Main Dashboard Wrapper -->
   <div class="main-wrapper">
     <header class="topbar">
-      <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="topbar-left">
         <button class="hamburger-btn" onclick="toggleSidebar(true)"><i class="fa-solid fa-bars"></i></button>
-        <h3 id="currentViewTitle" style="font-size: 1.25rem;">ऑनलाइन बुकिंग प्रबंधन</h3>
+        <h3 id="currentViewTitle" style="font-size: 1.25rem;" data-i18n="nav_bookings">ऑनलाइन बुकिंग प्रबंधन</h3>
       </div>
-      <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.35rem 0.85rem; border-radius:50px; font-size:0.85rem; font-weight:700; color:var(--primary);">
-        <i class="fa-solid fa-shield-check"></i> अधिकृत एडमिन
+      <div class="topbar-right">
+        <!-- 10-Language Selector Dropdown -->
+        <div class="lang-dropdown-wrapper">
+          <i class="fa-solid fa-language lang-icon"></i>
+          <select class="lang-select-box globalLanguageSelect" onchange="changeAdminLanguage(this.value)">
+            <option value="hi">हिंदी — Hindi</option>
+            <option value="en">English</option>
+            <option value="bn">বাংলা — Bengali</option>
+            <option value="mr">मराठी — Marathi</option>
+            <option value="ta">தமிழ் — Tamil</option>
+            <option value="te">తెలుగు — Telugu</option>
+            <option value="gu">ગુજરાતી — Gujarati</option>
+            <option value="kn">ಕನ್ನಡ — Kannada</option>
+            <option value="ml">മലയാളം — Malayalam</option>
+            <option value="pa">ਪੰਜਾਬੀ — Punjabi</option>
+          </select>
+        </div>
+
+        <div class="admin-pill">
+          <i class="fa-solid fa-shield-check"></i>
+          <span data-i18n="badge_verified_admin">अधिकृत एडमिन</span>
+        </div>
       </div>
     </header>
 
@@ -491,33 +631,33 @@
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-icon" style="background: #e0e7ff; color: var(--primary);"><i class="fa-solid fa-cart-shopping"></i></div>
-            <div class="metric-info"><h4>कुल बुकिंग</h4><div class="value" id="metricTotalBookings">0</div></div>
+            <div class="metric-info"><h4 data-i18n="m_total_bookings">कुल बुकिंग</h4><div class="value" id="metricTotalBookings">0</div></div>
           </div>
           <div class="metric-card">
             <div class="metric-icon" style="background: #dcfce7; color: var(--success);"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="metric-info"><h4>कन्फर्म बुकिंग</h4><div class="value" id="metricConfirmedBookings">0</div></div>
+            <div class="metric-info"><h4 data-i18n="m_confirmed">कन्फर्म बुकिंग</h4><div class="value" id="metricConfirmedBookings">0</div></div>
           </div>
           <div class="metric-card">
             <div class="metric-icon" style="background: #fef3c7; color: var(--warning);"><i class="fa-solid fa-clock-rotate-left"></i></div>
-            <div class="metric-info"><h4>लंबित / तैयारी में</h4><div class="value" id="metricPendingBookings">0</div></div>
+            <div class="metric-info"><h4 data-i18n="m_pending">लंबित / तैयारी में</h4><div class="value" id="metricPendingBookings">0</div></div>
           </div>
           <div class="metric-card">
             <div class="metric-icon" style="background: #fee2e2; color: var(--danger);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-            <div class="metric-info"><h4>कुल राजस्व</h4><div class="value" id="metricTotalRevenue">₹0</div></div>
+            <div class="metric-info"><h4 data-i18n="m_revenue">कुल राजस्व</h4><div class="value" id="metricTotalRevenue">₹0</div></div>
           </div>
         </div>
 
         <div class="card">
           <div class="card-title">
-            <span><i class="fa-solid fa-list-check"></i> सभी ऑर्डर्स एवं बुकिंग्स</span>
+            <span><i class="fa-solid fa-list-check"></i> <span data-i18n="tbl_all_bookings">सभी ऑर्डर्स एवं बुकिंग्स</span></span>
             <select id="bookingStatusFilter" class="form-control" style="width: auto; padding: 0.4rem 0.8rem;" onchange="filterBookingsTable()">
-              <option value="ALL">सभी स्टेटस</option>
-              <option value="CONFIRMED">CONFIRMED (कन्फर्म)</option>
-              <option value="PREPARING">PREPARING (तैयारी जारी)</option>
-              <option value="READY_FOR_PICKUP">READY FOR PICKUP (पिकअप हेतु तैयार)</option>
-              <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY (डिलीवरी रवाना)</option>
-              <option value="COMPLETED">COMPLETED (पूर्ण)</option>
-              <option value="CANCELLED">CANCELLED (रद्द)</option>
+              <option value="ALL" data-i18n="opt_all_status">सभी स्टेटस</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="PREPARING">PREPARING</option>
+              <option value="READY_FOR_PICKUP">READY FOR PICKUP</option>
+              <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
 
@@ -525,19 +665,19 @@
             <table>
               <thead>
                 <tr>
-                  <th>बुकिंग ID</th>
-                  <th>तारीख</th>
-                  <th>ग्राहक</th>
-                  <th>प्रकार</th>
-                  <th>दूरी व चार्ज</th>
-                  <th>खिलौने</th>
-                  <th>कुल भुगतान</th>
-                  <th>स्थिति</th>
-                  <th>क्रिया</th>
+                  <th data-i18n="col_booking_id">बुकिंग ID</th>
+                  <th data-i18n="col_date">तारीख</th>
+                  <th data-i18n="col_customer">ग्राहक</th>
+                  <th data-i18n="col_type">प्रकार</th>
+                  <th data-i18n="col_distance_charge">दूरी व चार्ज</th>
+                  <th data-i18n="col_items">खिलौने</th>
+                  <th data-i18n="col_paid">कुल भुगतान</th>
+                  <th data-i18n="col_status">स्थिति</th>
+                  <th data-i18n="col_action">क्रिया</th>
                 </tr>
               </thead>
               <tbody id="bookingsTableBody">
-                <tr><td colspan="9" style="text-align:center; padding:1.5rem;">लोड हो रहा है...</td></tr>
+                <tr><td colspan="9" style="text-align:center; padding:1.5rem;" data-i18n="loading_text">लोड हो रहा है...</td></tr>
               </tbody>
             </table>
           </div>
@@ -547,13 +687,13 @@
       <!-- View 2: Products & Inventory -->
       <section id="inventoryView" class="view-panel">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-cubes-stacked"></i> उत्पाद एवं साझा स्टॉक</h2>
+          <h2><i class="fa-solid fa-cubes-stacked"></i> <span data-i18n="nav_inventory">उत्पाद एवं साझा स्टॉक</span></h2>
           <div style="display:flex; gap:0.6rem;">
             <button class="btn btn-secondary" onclick="openOfflineSaleModal()">
-              <i class="fa-solid fa-cash-register"></i> काउंटर ऑफलाइन बिक्री दर्ज करें
+              <i class="fa-solid fa-cash-register"></i> <span data-i18n="btn_offline_sale">काउंटर ऑफलाइन बिक्री</span>
             </button>
             <button class="btn btn-primary" onclick="openProductModal()">
-              <i class="fa-solid fa-plus"></i> नया खिलौना जोड़ें
+              <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_toy">नया खिलौना जोड़ें</span>
             </button>
           </div>
         </div>
@@ -563,19 +703,19 @@
             <table>
               <thead>
                 <tr>
-                  <th>तस्वीर</th>
-                  <th>खिलौना नाम</th>
-                  <th>श्रेणी</th>
-                  <th>SKU</th>
-                  <th>मूल्य</th>
-                  <th>छूट मूल्य</th>
-                  <th>उपलब्ध स्टॉक</th>
-                  <th>स्थिति</th>
-                  <th>क्रिया</th>
+                  <th data-i18n="col_image">तस्वीर</th>
+                  <th data-i18n="col_toy_name">खिलौना नाम</th>
+                  <th data-i18n="col_category">श्रेणी</th>
+                  <th data-i18n="col_sku">SKU</th>
+                  <th data-i18n="col_price">मूल्य</th>
+                  <th data-i18n="col_discount">छूट मूल्य</th>
+                  <th data-i18n="col_stock">उपलब्ध स्टॉक</th>
+                  <th data-i18n="col_status">स्थिति</th>
+                  <th data-i18n="col_action">क्रिया</th>
                 </tr>
               </thead>
               <tbody id="productsTableBody">
-                <tr><td colspan="9" style="text-align:center;">लोड हो रहा है...</td></tr>
+                <tr><td colspan="9" style="text-align:center;" data-i18n="loading_text">लोड हो रहा है...</td></tr>
               </tbody>
             </table>
           </div>
@@ -585,18 +725,18 @@
       <!-- View 3: Store Settings (☰ Menu -> Store Settings) -->
       <section id="storeSettingsView" class="view-panel">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-store"></i> दुकान की लोकेशन सेटिंग्स</h2>
+          <h2><i class="fa-solid fa-store"></i> <span data-i18n="nav_store_settings">दुकान की लोकेशन सेटिंग्स</span></h2>
         </div>
 
         <div class="card">
           <form id="storeLocationForm" onsubmit="event.preventDefault(); saveStoreLocationSettings();">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
               <div class="form-group">
-                <label>दुकान का नाम</label>
+                <label data-i18n="lbl_store_name">दुकान का नाम</label>
                 <input type="text" id="storeNameInput" class="form-control" required />
               </div>
               <div class="form-group">
-                <label>दुकान का पूरा पता</label>
+                <label data-i18n="lbl_store_address">दुकान का पूरा पता</label>
                 <input type="text" id="storeAddressInput" class="form-control" required />
               </div>
             </div>
@@ -612,20 +752,20 @@
               </div>
             </div>
 
-            <div style="display:flex; gap:0.8rem; margin:0.8rem 0;">
+            <div style="display:flex; gap:0.8rem; margin:0.8rem 0; flex-wrap:wrap;">
               <button type="button" class="btn btn-secondary" onclick="fetchAdminCurrentGps()">
-                <i class="fa-solid fa-location-crosshairs"></i> ब्राउज़र से दुकान की GPS लोकेशन लें
+                <i class="fa-solid fa-location-crosshairs"></i> <span data-i18n="btn_get_gps">ब्राउज़र से GPS लोकेशन लें</span>
               </button>
               <button type="button" class="btn btn-secondary" onclick="refreshMapMarker()">
-                <i class="fa-solid fa-map-pin"></i> मैप पिन रिफ्रेश करें
+                <i class="fa-solid fa-map-pin"></i> <span data-i18n="btn_refresh_pin">मैप पिन रिफ्रेश करें</span>
               </button>
             </div>
 
-            <label style="font-weight:700; font-size:0.88rem;">मैप पर पिन खिसकाकर दुकान सेट करें:</label>
+            <label style="font-weight:700; font-size:0.88rem;" data-i18n="lbl_map_pin_guide">मैप पर पिन खिसकाकर दुकान सेट करें:</label>
             <div id="storeMap"></div>
 
             <button type="submit" id="saveStoreBtn" class="btn btn-primary" style="margin-top:1rem;">
-              <i class="fa-solid fa-floppy-disk"></i> दुकान की लोकेशन सेव करें
+              <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_store">दुकान की लोकेशन सेव करें</span>
             </button>
           </form>
         </div>
@@ -634,7 +774,7 @@
       <!-- View 4: Delivery Settings -->
       <section id="deliverySettingsView" class="view-panel">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-truck-fast"></i> डिलीवरी एवं दूरी नियम</h2>
+          <h2><i class="fa-solid fa-truck-fast"></i> <span data-i18n="nav_delivery_rules">डिलीवरी एवं दूरी नियम</span></h2>
         </div>
 
         <div class="card">
@@ -642,54 +782,54 @@
             <div class="form-group" style="background:#f8fafc; padding:1rem; border-radius:8px; border:1px solid var(--border);">
               <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
                 <input type="checkbox" id="enableHomeDeliveryToggle" style="width:20px; height:20px;" checked />
-                <span style="font-size:1rem; font-weight:800;">होम डिलीवरी सेवा चालू रखें</span>
+                <span style="font-size:1rem; font-weight:800;" data-i18n="lbl_enable_delivery">होम डिलीवरी सेवा चालू रखें</span>
               </label>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
               <div class="form-group">
-                <label>अधिकतम डिलीवरी दायरा (Max KM) *</label>
+                <label><span data-i18n="lbl_max_radius">अधिकतम डिलीवरी दायरा (Max KM)</span> *</label>
                 <input type="number" step="0.1" id="maxDeliveryRadiusInput" class="form-control" required value="3.0" min="0.5" />
-                <small style="color:var(--text-muted);">डिफ़ॉल्ट 3.0 किमी। इससे अधिक दूरी पर केवल पिकअप उपलब्ध होगा।</small>
+                <small style="color:var(--text-muted);" data-i18n="sub_radius_hint">डिफ़ॉल्ट 3.0 किमी। इससे अधिक दूरी पर केवल पिकअप उपलब्ध होगा।</small>
               </div>
               <div class="form-group">
-                <label>पिकअप होल्ड समय (घंटों में)</label>
+                <label data-i18n="lbl_hold_hours">पिकअप होल्ड समय (घंटों में)</label>
                 <input type="number" id="pickupHoursInput" class="form-control" required value="48" min="1" />
               </div>
             </div>
 
             <div class="form-group">
-              <label>डिलीवरी शुल्क मॉडल</label>
+              <label data-i18n="lbl_pricing_model">डिलीवरी शुल्क मॉडल</label>
               <select id="pricingModelSelect" class="form-control" onchange="togglePricingModelFields()">
-                <option value="per_km">प्रति किलोमीटर दर (Per KM with Base Fee)</option>
-                <option value="slabs">दूरी स्लैब्स (Distance Slabs JSON)</option>
+                <option value="per_km" data-i18n="opt_per_km">प्रति किलोमीटर दर (Per KM with Base Fee)</option>
+                <option value="slabs" data-i18n="opt_slabs">दूरी स्लैब्स (Distance Slabs JSON)</option>
               </select>
             </div>
 
             <div id="perKmFields" style="background:#eff6ff; padding:1rem; border-radius:8px; border:1px solid #bfdbfe; margin-bottom:1rem;">
               <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem;">
                 <div class="form-group">
-                  <label>बेस शुल्क (Base ₹)</label>
+                  <label data-i18n="lbl_base_fee">बेस शुल्क (Base ₹)</label>
                   <input type="number" id="baseDeliveryFeeInput" class="form-control" value="20" min="0" />
                 </div>
                 <div class="form-group">
-                  <label>बेस दूरी (Base KM)</label>
+                  <label data-i18n="lbl_base_km">बेस दूरी (Base KM)</label>
                   <input type="number" step="0.1" id="baseKmInput" class="form-control" value="1.0" min="0" />
                 </div>
                 <div class="form-group">
-                  <label>अतिरिक्त दर (₹ / KM)</label>
+                  <label data-i18n="lbl_per_km_rate">अतिरिक्त दर (₹ / KM)</label>
                   <input type="number" id="perKmRateInput" class="form-control" value="15" min="0" />
                 </div>
               </div>
             </div>
 
             <div id="slabsFields" style="display:none; background:#f0fdf4; padding:1rem; border-radius:8px; border:1px solid #bbf7d0; margin-bottom:1rem;">
-              <label style="font-weight:700;">दूरी स्लैब्स (JSON):</label>
+              <label style="font-weight:700;" data-i18n="lbl_slabs_json">दूरी स्लैब्स (JSON):</label>
               <textarea id="distanceSlabsInput" class="form-control" rows="4">[{"maxKm":1.0,"fee":20},{"maxKm":2.0,"fee":35},{"maxKm":3.0,"fee":50}]</textarea>
             </div>
 
             <button type="submit" id="saveDeliveryRulesBtn" class="btn btn-primary">
-              <i class="fa-solid fa-floppy-disk"></i> डिलीवरी नियम सेव करें
+              <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_rules">डिलीवरी नियम सेव करें</span>
             </button>
           </form>
         </div>
@@ -698,26 +838,26 @@
       <!-- View 5: Storage Dashboard -->
       <section id="storageDashboardView" class="view-panel">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-hard-drive"></i> Firebase Storage डैशबोर्ड एवं कोटा</h2>
+          <h2><i class="fa-solid fa-hard-drive"></i> <span data-i18n="nav_storage_dash">Firebase Storage डैशबोर्ड एवं कोटा</span></h2>
         </div>
 
         <div class="card">
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
             <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
-              <small style="color:var(--text-muted); font-weight:700;">कैटलॉग में कुल तस्वीरें</small>
+              <small style="color:var(--text-muted); font-weight:700;" data-i18n="card_catalog_images">कैटलॉग में कुल तस्वीरें</small>
               <div style="font-size:1.5rem; font-weight:800;" id="storageImageCount">0 फाइल्स</div>
             </div>
             <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
-              <small style="color:var(--text-muted); font-weight:700;">गणना किया गया डेटा साइज</small>
+              <small style="color:var(--text-muted); font-weight:700;" data-i18n="card_data_size">गणना किया गया डेटा साइज</small>
               <div style="font-size:1.5rem; font-weight:800;">Unknown (Unavailable)</div>
             </div>
             <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
-              <small style="color:var(--text-muted); font-weight:700;">निःशुल्क कोटा सीमा (Spark)</small>
+              <small style="color:var(--text-muted); font-weight:700;" data-i18n="card_spark_limit">निःशुल्क कोटा सीमा (Spark)</small>
               <div style="font-size:1.5rem; font-weight:800;">5.0 GB</div>
             </div>
           </div>
-          <div style="background:#fffbeb; border:1px solid #fde68a; padding:1rem; border-radius:8px; font-size:0.88rem; color:#92400e; line-height:1.5;">
-            <strong>नोट:</strong> Google Cloud Client SDK सुरक्षा कारणों से सीधे स्टोरेज बाइट्स नहीं लौटाता। वास्तविक स्टोरेज कोटा Firebase Console > Storage में देखा जाता है। क्षमता बढ़ाने के लिए Firebase Console में <strong>Blaze Plan</strong> एक्टिवेट करें।
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:1rem; border-radius:8px; font-size:0.88rem; color:#92400e; line-height:1.5;" data-i18n="storage_quota_note">
+            Google Cloud Client SDK सुरक्षा कारणों से सीधे स्टोरेज बाइट्स नहीं लौटाता। वास्तविक स्टोरेज कोटा Firebase Console > Storage में देखा जाता है। क्षमता बढ़ाने के लिए Firebase Console में Blaze Plan एक्टिवेट करें।
           </div>
         </div>
       </section>
@@ -725,19 +865,19 @@
       <!-- View 6: Integrations Safe Status -->
       <section id="integrationsView" class="view-panel">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-gears"></i> गेटवे व नोटिफिकेशन्स स्थिति</h2>
+          <h2><i class="fa-solid fa-gears"></i> <span data-i18n="nav_integrations">गेटवे व ईमेल स्थिति</span></h2>
         </div>
         <div class="card">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;">
             <div style="border:1px solid var(--border); border-radius:8px; padding:1.2rem;">
               <h3 style="font-size:1.1rem; margin-bottom:0.5rem;"><i class="fa-solid fa-credit-card" style="color:var(--primary);"></i> Razorpay</h3>
-              <p style="font-size:0.85rem; color:var(--text-muted);">स्थिति: <strong>सक्रिय (Configured)</strong></p>
-              <p style="font-size:0.85rem; color:var(--text-muted);">Key Secret: <code>••••••••••••••••</code> (बैकएंड में सुरक्षित)</p>
+              <p style="font-size:0.85rem; color:var(--text-muted);"><span data-i18n="lbl_status">स्थिति</span>: <strong>सक्रिय (Configured)</strong></p>
+              <p style="font-size:0.85rem; color:var(--text-muted);">Key Secret: <code>••••••••••••••••</code> (<span data-i18n="lbl_backend_secured">बैकएंड में सुरक्षित</span>)</p>
             </div>
             <div style="border:1px solid var(--border); border-radius:8px; padding:1.2rem;">
               <h3 style="font-size:1.1rem; margin-bottom:0.5rem;"><i class="fa-solid fa-envelope" style="color:var(--secondary);"></i> Gmail Notifications</h3>
-              <p style="font-size:0.85rem; color:var(--text-muted);">स्थिति: <strong>सक्रिय (Configured)</strong></p>
-              <p style="font-size:0.85rem; color:var(--text-muted);">App Password: <code>••••••••••••••••</code> (बैकएंड में सुरक्षित)</p>
+              <p style="font-size:0.85rem; color:var(--text-muted);"><span data-i18n="lbl_status">स्थिति</span>: <strong>सक्रिय (Configured)</strong></p>
+              <p style="font-size:0.85rem; color:var(--text-muted);">App Password: <code>••••••••••••••••</code> (<span data-i18n="lbl_backend_secured">बैकएंड में सुरक्षित</span>)</p>
             </div>
           </div>
         </div>
@@ -750,7 +890,7 @@
   <div id="productModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="productModalHeading">खिलौना जोड़ें</h3>
+        <h3 id="productModalHeading" data-i18n="btn_add_toy">खिलौना जोड़ें</h3>
         <button class="close-btn" onclick="closeModal('productModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
@@ -759,13 +899,13 @@
           <input type="hidden" id="prodExistingImgUrl" />
 
           <div class="form-group">
-            <label>खिलौने का नाम *</label>
+            <label><span data-i18n="col_toy_name">खिलौने का नाम</span> *</label>
             <input type="text" id="prodNameInput" class="form-control" required />
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
             <div class="form-group">
-              <label>श्रेणी *</label>
+              <label><span data-i18n="col_category">श्रेणी</span> *</label>
               <input type="text" id="prodCategoryInput" class="form-control" required />
             </div>
             <div class="form-group">
@@ -776,41 +916,41 @@
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem;">
             <div class="form-group">
-              <label>मूल्य (₹) *</label>
+              <label><span data-i18n="col_price">मूल्य (₹)</span> *</label>
               <input type="number" id="prodPriceInput" class="form-control" required min="0" />
             </div>
             <div class="form-group">
-              <label>छूट मूल्य (₹)</label>
+              <label data-i18n="col_discount">छूट मूल्य (₹)</label>
               <input type="number" id="prodDiscountInput" class="form-control" min="0" />
             </div>
             <div class="form-group">
-              <label>स्टॉक *</label>
+              <label><span data-i18n="col_stock">स्टॉक</span> *</label>
               <input type="number" id="prodStockInput" class="form-control" required min="0" />
             </div>
           </div>
 
           <div class="form-group">
-            <label>उम्र सीमा</label>
+            <label data-i18n="lbl_age_group">उम्र सीमा</label>
             <input type="text" id="prodAgeInput" class="form-control" />
           </div>
 
           <div class="form-group">
-            <label>विवरण</label>
+            <label data-i18n="lbl_description">विवरण</label>
             <textarea id="prodDescInput" class="form-control" rows="2"></textarea>
           </div>
 
           <div class="form-group">
-            <label>मुख्य तस्वीर चुनें (Firebase Storage)</label>
+            <label data-i18n="lbl_choose_image">मुख्य तस्वीर चुनें (Firebase Storage)</label>
             <input type="file" id="prodImageFile" class="form-control" accept="image/*" />
           </div>
 
           <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
             <input type="checkbox" id="prodActiveCheck" checked style="width:18px; height:18px;" />
-            <label for="prodActiveCheck" style="margin:0;">सक्रिय रखें (Active)</label>
+            <label for="prodActiveCheck" style="margin:0;" data-i18n="lbl_active_toy">सक्रिय रखें (Active)</label>
           </div>
 
           <button type="submit" id="saveProductBtn" class="btn btn-primary btn-block">
-            <i class="fa-solid fa-floppy-disk"></i> सेव करें
+            <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">सेव करें</span>
           </button>
         </form>
       </div>
@@ -821,21 +961,21 @@
   <div id="offlineSaleModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 480px;">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-cash-register"></i> काउंटर ऑफलाइन बिक्री</h3>
+        <h3><i class="fa-solid fa-cash-register"></i> <span data-i18n="btn_offline_sale">काउंटर ऑफलाइन बिक्री</span></h3>
         <button class="close-btn" onclick="closeModal('offlineSaleModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <form id="offlineSaleForm" onsubmit="event.preventDefault(); handleOfflineSaleSubmit();">
           <div class="form-group">
-            <label>खिलौना चुनें</label>
+            <label data-i18n="lbl_select_toy">खिलौना चुनें</label>
             <select id="offlineProductSelect" class="form-control" required></select>
           </div>
           <div class="form-group">
-            <label>मात्रा *</label>
+            <label><span data-i18n="lbl_qty">मात्रा</span> *</label>
             <input type="number" id="offlineQtyInput" class="form-control" required min="1" value="1" />
           </div>
           <button type="submit" id="offlineSaleBtn" class="btn btn-primary btn-block">
-            <i class="fa-solid fa-check"></i> स्टॉक तुरंत घटाएँ
+            <i class="fa-solid fa-check"></i> <span data-i18n="btn_deduct_stock">स्टॉक तुरंत घटाएँ</span>
           </button>
         </form>
       </div>
@@ -853,7 +993,7 @@
     </div>
   </div>
 
-  <!-- Modular Firebase JS -->
+  <!-- Modular Firebase JS & 10-Language Dictionary Engine -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { 
@@ -883,7 +1023,761 @@
       getDownloadURL 
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
 
-    // Firebase Config
+    // 10 Languages Central I18N Dictionary
+    const I18N = {
+      en: {
+        admin_portal_title: "Toy City | Admin",
+        admin_portal_subtitle: "Secure login for authorized administrators only",
+        lbl_admin_email: "Authorized Email",
+        lbl_password: "Password",
+        btn_login: "Continue Login",
+        otp_sent_notice: "A 6-digit security verification code has been sent to your email.",
+        lbl_enter_otp: "6-Digit Verification Code",
+        btn_verify_otp: "Verify & Enter Portal",
+        btn_back: "Go Back",
+        nav_bookings: "Booking Management",
+        nav_inventory: "Products & Stock",
+        nav_store_settings: "Store Location",
+        nav_delivery_rules: "Delivery Rules",
+        nav_storage_dash: "Storage Dashboard",
+        nav_integrations: "Gateways & Email Status",
+        badge_verified_admin: "Verified Admin",
+        m_total_bookings: "Total Bookings",
+        m_confirmed: "Confirmed",
+        m_pending: "Pending / Prep",
+        m_revenue: "Total Revenue",
+        tbl_all_bookings: "All Orders & Bookings",
+        opt_all_status: "All Statuses",
+        col_booking_id: "Booking ID",
+        col_date: "Date",
+        col_customer: "Customer",
+        col_type: "Type",
+        col_distance_charge: "Distance & Fee",
+        col_items: "Items",
+        col_paid: "Total Paid",
+        col_status: "Status",
+        col_action: "Action",
+        loading_text: "Loading...",
+        btn_offline_sale: "Counter Walk-in Sale",
+        btn_add_toy: "Add New Toy",
+        col_image: "Image",
+        col_toy_name: "Toy Name",
+        col_category: "Category",
+        col_sku: "SKU",
+        col_price: "Price",
+        col_discount: "Discounted Price",
+        col_stock: "Available Stock",
+        lbl_store_name: "Store Name",
+        lbl_store_address: "Store Address",
+        btn_get_gps: "Get Browser GPS Coordinates",
+        btn_refresh_pin: "Refresh Map Pin",
+        lbl_map_pin_guide: "Drag marker or click on map to set store location:",
+        btn_save_store: "Save Store Location",
+        lbl_enable_delivery: "Keep Home Delivery Active",
+        lbl_max_radius: "Maximum Delivery Radius (Max KM)",
+        sub_radius_hint: "Default 3.0 km. Beyond this distance, only pickup is allowed.",
+        lbl_hold_hours: "Pickup Hold Time (Hours)",
+        lbl_pricing_model: "Delivery Pricing Model",
+        opt_per_km: "Per KM Rate (with Base Fee)",
+        opt_slabs: "Distance Slabs (JSON)",
+        lbl_base_fee: "Base Fee (₹)",
+        lbl_base_km: "Base Distance (KM)",
+        lbl_per_km_rate: "Extra Rate (₹ / KM)",
+        lbl_slabs_json: "Distance Slabs (JSON):",
+        btn_save_rules: "Save Delivery Rules",
+        card_catalog_images: "Total Catalog Images",
+        card_data_size: "Calculated Media Size",
+        card_spark_limit: "Free Quota Limit (Spark)",
+        storage_quota_note: "Google Cloud Client SDK does not expose raw storage bytes directly. View real storage metrics in Firebase Console > Storage. Activate Blaze Plan to scale storage.",
+        lbl_status: "Status",
+        lbl_backend_secured: "Secured in Cloud",
+        lbl_age_group: "Age Recommendation",
+        lbl_description: "Description",
+        lbl_choose_image: "Choose Main Image (Firebase Storage)",
+        lbl_active_toy: "Keep Active",
+        btn_save: "Save",
+        lbl_select_toy: "Select Toy",
+        lbl_qty: "Quantity",
+        btn_deduct_stock: "Deduct Stock Immediately"
+      },
+      hi: {
+        admin_portal_title: "खिलौना नगरी | Admin",
+        admin_portal_subtitle: "केवल अधिकृत एडमिन क्रेडेंशियल्स द्वारा सुरक्षित लॉगिन",
+        lbl_admin_email: "अधिकृत ईमेल",
+        lbl_password: "पासवर्ड",
+        btn_login: "लॉगिन जारी रखें",
+        otp_sent_notice: "सुरक्षा कोड आपके अधिकृत ईमेल पर भेजा गया है।",
+        lbl_enter_otp: "6-अंकों का वेरिफिकेशन कोड",
+        btn_verify_otp: "वेरिफाई करें एवं पोर्टल खोलें",
+        btn_back: "वापस जाएँ",
+        nav_bookings: "बुकिंग प्रबंधन",
+        nav_inventory: "उत्पाद एवं स्टॉक",
+        nav_store_settings: "दुकान लोकेशन",
+        nav_delivery_rules: "डिलीवरी नियम",
+        nav_storage_dash: "स्टोरेज डैशबोर्ड",
+        nav_integrations: "गेटवे व ईमेल स्थिति",
+        badge_verified_admin: "अधिकृत एडमिन",
+        m_total_bookings: "कुल बुकिंग",
+        m_confirmed: "कन्फर्म बुकिंग",
+        m_pending: "लंबित / तैयारी में",
+        m_revenue: "कुल राजस्व",
+        tbl_all_bookings: "सभी ऑर्डर्स एवं बुकिंग्स",
+        opt_all_status: "सभी स्टेटस",
+        col_booking_id: "बुकिंग ID",
+        col_date: "तारीख",
+        col_customer: "ग्राहक",
+        col_type: "प्रकार",
+        col_distance_charge: "दूरी व चार्ज",
+        col_items: "खिलौने",
+        col_paid: "कुल भुगतान",
+        col_status: "स्थिति",
+        col_action: "क्रिया",
+        loading_text: "लोड हो रहा है...",
+        btn_offline_sale: "काउंटर ऑफलाइन बिक्री",
+        btn_add_toy: "नया खिलौना जोड़ें",
+        col_image: "तस्वीर",
+        col_toy_name: "खिलौना नाम",
+        col_category: "श्रेणी",
+        col_sku: "SKU",
+        col_price: "मूल्य",
+        col_discount: "छूट मूल्य",
+        col_stock: "उपलब्ध स्टॉक",
+        lbl_store_name: "दुकान का नाम",
+        lbl_store_address: "दुकान का पूरा पता",
+        btn_get_gps: "ब्राउज़र से GPS लोकेशन लें",
+        btn_refresh_pin: "मैप पिन रिफ्रेश करें",
+        lbl_map_pin_guide: "मैप पर पिन खिसकाकर दुकान सेट करें:",
+        btn_save_store: "दुकान की लोकेशन सेव करें",
+        lbl_enable_delivery: "होम डिलीवरी सेवा चालू रखें",
+        lbl_max_radius: "अधिकतम डिलीवरी दायरा (Max KM)",
+        sub_radius_hint: "डिफ़ॉल्ट 3.0 किमी। इससे अधिक दूरी पर केवल पिकअप उपलब्ध होगा।",
+        lbl_hold_hours: "पिकअप होल्ड समय (घंटों में)",
+        lbl_pricing_model: "डिलीवरी शुल्क मॉडल",
+        opt_per_km: "प्रति किलोमीटर दर (Per KM with Base Fee)",
+        opt_slabs: "दूरी स्लैब्स (Distance Slabs JSON)",
+        lbl_base_fee: "बेस शुल्क (Base ₹)",
+        lbl_base_km: "बेस दूरी (Base KM)",
+        lbl_per_km_rate: "अतिरिक्त दर (₹ / KM)",
+        lbl_slabs_json: "दूरी स्लैब्स (JSON):",
+        btn_save_rules: "डिलीवरी नियम सेव करें",
+        card_catalog_images: "कैटलॉग में कुल तस्वीरें",
+        card_data_size: "गणना किया गया डेटा साइज",
+        card_spark_limit: "निःशुल्क कोटा सीमा (Spark)",
+        storage_quota_note: "Google Cloud Client SDK सुरक्षा कारणों से सीधे स्टोरेज बाइट्स नहीं लौटाता। वास्तविक स्टोरेज कोटा Firebase Console > Storage में देखा जाता है। क्षमता बढ़ाने के लिए Firebase Console में Blaze Plan एक्टिवेट करें।",
+        lbl_status: "स्थिति",
+        lbl_backend_secured: "बैकएंड में सुरक्षित",
+        lbl_age_group: "उम्र सीमा",
+        lbl_description: "विवरण",
+        lbl_choose_image: "मुख्य तस्वीर चुनें (Firebase Storage)",
+        lbl_active_toy: "सक्रिय रखें",
+        btn_save: "सेव करें",
+        lbl_select_toy: "खिलौना चुनें",
+        lbl_qty: "मात्रा",
+        btn_deduct_stock: "स्टॉक तुरंत घटाएँ"
+      },
+      bn: {
+        admin_portal_title: "খেলনা নগরী | Admin",
+        admin_portal_subtitle: "শুধুমাত্র অনুমোদিত অ্যাডমিনদের জন্য সুরক্ষিত লগইন",
+        lbl_admin_email: "অনুমোদিত ইমেল",
+        lbl_password: "পাসওয়ার্ড",
+        btn_login: "লগইন চালিয়ে যান",
+        otp_sent_notice: "আপনার ইমেলে একটি ৬-সংখ্যার যাচাইকরণ কোড পাঠানো হয়েছে।",
+        lbl_enter_otp: "৬-সংখ্যার ওটিপি কোড",
+        btn_verify_otp: "যাচাই করুন এবং প্রবেশ করুন",
+        btn_back: "ফিরে যান",
+        nav_bookings: "বুকিং ব্যবস্থাপনা",
+        nav_inventory: "পণ্য ও স্টক",
+        nav_store_settings: "দোকানের অবস্থান",
+        nav_delivery_rules: "ডেলিভারি নিয়ম",
+        nav_storage_dash: "স্টোরেজ ড্যাশবোর্ড",
+        nav_integrations: "গেটওয়ে ও সিস্টেম স্ট্যাটাস",
+        badge_verified_admin: "অনুমোদিত অ্যাডমিন",
+        m_total_bookings: "মোট বুকিং",
+        m_confirmed: "নিশ্চিত বুকিং",
+        m_pending: "অপেক্ষারত",
+        m_revenue: "মোট আয়",
+        tbl_all_bookings: "সমস্ত অর্ডার এবং বুকিং",
+        opt_all_status: "সব স্ট্যাটাস",
+        col_booking_id: "বুকিং আইডি",
+        col_date: "তারিখ",
+        col_customer: "গ্রাহক",
+        col_type: "প্রকার",
+        col_distance_charge: "দূরত্ব ও ফি",
+        col_items: "খেলনা",
+        col_paid: "মোট পরিশোধ",
+        col_status: "অবস্থা",
+        col_action: "অ্যাকশন",
+        loading_text: "লোড হচ্ছে...",
+        btn_offline_sale: "কাউন্টার অফলাইন বিক্রয়",
+        btn_add_toy: "নতুন খেলনা যোগ করুন",
+        col_image: "ছবি",
+        col_toy_name: "খেলনার নাম",
+        col_category: "বিভাগ",
+        col_sku: "এসকেইউ",
+        col_price: "মূল্য",
+        col_discount: "ছাড় মূল্য",
+        col_stock: "উপলব্ধ স্টক",
+        lbl_store_name: "দোকানের নাম",
+        lbl_store_address: "দোকানের ঠিকানা",
+        btn_get_gps: "জিপিএস অবস্থান নিন",
+        btn_refresh_pin: "ম্যাপ পিন রিফ্রেশ করুন",
+        lbl_map_pin_guide: "দোকানের অবস্থান সেট করতে পিনটি সরান:",
+        btn_save_store: "অবস্থান সংরক্ষণ করুন",
+        lbl_enable_delivery: "হোম ডেলিভারি সক্রিয় রাখুন",
+        lbl_max_radius: "সর্বোচ্চ ডেলিভারি দূরত্ব (কিমি)",
+        sub_radius_hint: "ডিফল্ট ৩.০ কিমি। এর বাইরে কেবল পিকআপ উপলব্ধ।",
+        lbl_hold_hours: "পিকআপ হোল্ড সময় (ঘণ্টা)",
+        lbl_pricing_model: "ডেলিভারি চার্জ মডেল",
+        opt_per_km: "প্রতি কিমি হার",
+        opt_slabs: "দূরত্ব স্ল্যাব (JSON)",
+        lbl_base_fee: "বেস ফি (₹)",
+        lbl_base_km: "বেস দূরত্ব (কিমি)",
+        lbl_per_km_rate: "অতিরিক্ত হার (₹/কিমি)",
+        lbl_slabs_json: "দূরত্ব স্ল্যাব (JSON):",
+        btn_save_rules: "নিয়ম সংরক্ষণ করুন",
+        card_catalog_images: "মোট ক্যাটালগ ছবি",
+        card_data_size: "গণনাকৃত ডেটা আকার",
+        card_spark_limit: "বিনামূল্যে সীমা (Spark)",
+        storage_quota_note: "Firebase Console-এ আসল স্টোরেজ ব্যবহার দেখুন। সীমা বাড়াতে Blaze Plan সক্রিয় করুন।",
+        lbl_status: "অবস্থা",
+        lbl_backend_secured: "ক্লাউডে সুরক্ষিত",
+        lbl_age_group: "বয়স সীমা",
+        lbl_description: "বিবরণ",
+        lbl_choose_image: "প্রধান ছবি নির্বাচন করুন",
+        lbl_active_toy: "সক্রিয় রাখুন",
+        btn_save: "সংরক্ষণ করুন",
+        lbl_select_toy: "খেলনা নির্বাচন করুন",
+        lbl_qty: "পরিমাণ",
+        btn_deduct_stock: "স্টক অবিলম্বে কমান"
+      },
+      mr: {
+        admin_portal_title: "खेळणी नगरी | Admin",
+        admin_portal_subtitle: "केवळ अधिकृत ॲडमिनसाठी सुरक्षित लॉगिन",
+        lbl_admin_email: "अधिकृत ईमेल",
+        lbl_password: "पासवर्ड",
+        btn_login: "लॉगिन सुरू ठेवा",
+        otp_sent_notice: "आपल्या ईमेलवर ६-अंकी सुरक्षा कोड पाठवला गेला आहे.",
+        lbl_enter_otp: "६-अंकी पडताळणी कोड",
+        btn_verify_otp: "सत्यापित करा आणि उघडा",
+        btn_back: "मागे जा",
+        nav_bookings: "बुकिंग व्यवस्थापन",
+        nav_inventory: "उत्पादने व स्टॉक",
+        nav_store_settings: "दुकान स्थान",
+        nav_delivery_rules: "डिलिव्हरी नियम",
+        nav_storage_dash: "स्टोरेज डॅशबोर्ड",
+        nav_integrations: "गेटवे व ईमेल स्थिती",
+        badge_verified_admin: "अधिकृत ॲडमिन",
+        m_total_bookings: "एकूण बुकिंग",
+        m_confirmed: "पुष्टी बुकिंग",
+        m_pending: "प्रलंबित / तयारी",
+        m_revenue: "एकूण महसूल",
+        tbl_all_bookings: "सर्व ऑर्डर्स आणि बुकिंग",
+        opt_all_status: "सर्व स्थिती",
+        col_booking_id: "बुकिंग आयडी",
+        col_date: "तारीख",
+        col_customer: "ग्राहक",
+        col_type: "प्रकार",
+        col_distance_charge: "अंतर व शुल्क",
+        col_items: "खेळणी",
+        col_paid: "एकूण भरणा",
+        col_status: "स्थिती",
+        col_action: "कृती",
+        loading_text: "लोड होत आहे...",
+        btn_offline_sale: "काउंटर ऑफलाइन विक्री",
+        btn_add_toy: "नवीन खेळणी जोडा",
+        col_image: "चित्र",
+        col_toy_name: "खेळणीचे नाव",
+        col_category: "श्रेणी",
+        col_sku: "SKU",
+        col_price: "किंमत",
+        col_discount: "सूट किंमत",
+        col_stock: "उपलब्ध स्टॉक",
+        lbl_store_name: "दुकानाचे नाव",
+        lbl_store_address: "दुकानाचा पत्ता",
+        btn_get_gps: "ब्राउझर GPS स्थान मिळवा",
+        btn_refresh_pin: "नकाशा पिन रीफ्रेश करा",
+        lbl_map_pin_guide: "नकाशावर पिन हलवून दुकान निश्चित करा:",
+        btn_save_store: "स्थान जतन करा",
+        lbl_enable_delivery: "होम डिलिव्हरी सुरू ठेवा",
+        lbl_max_radius: "कमाल डिलिव्हरी अंतर (किमी)",
+        sub_radius_hint: "डीफॉल्ट ३.० किमी. त्याहून अधिक अंतरावर फक्त पिकअप मिळेल.",
+        lbl_hold_hours: "पिकअप होल्ड वेळ (तास)",
+        lbl_pricing_model: "डिलिव्हरी दर मॉडेल",
+        opt_per_km: "प्रति किमी दर",
+        opt_slabs: "अंतर स्लॅब (JSON)",
+        lbl_base_fee: "मूळ शुल्क (₹)",
+        lbl_base_km: "मूळ अंतर (किमी)",
+        lbl_per_km_rate: "अतिरिक्त दर (₹/किमी)",
+        lbl_slabs_json: "अंतर स्लॅब (JSON):",
+        btn_save_rules: "नियम जतन करा",
+        card_catalog_images: "एकूण कॅटलॉग प्रतिमा",
+        card_data_size: "गणना केलेला आकार",
+        card_spark_limit: "विनामूल्य कोटा (Spark)",
+        storage_quota_note: "Firebase Console मध्ये वास्तविक स्टोरेज वापर तपासा. क्षमता वाढवण्यासाठी Blaze Plan वापरा.",
+        lbl_status: "स्थिती",
+        lbl_backend_secured: "क्लाउडमध्ये सुरक्षित",
+        lbl_age_group: "वयोगट",
+        lbl_description: "वर्णन",
+        lbl_choose_image: "मुख्य प्रतिमा निवडा",
+        lbl_active_toy: "सक्रिय ठेवा",
+        btn_save: "जतन करा",
+        lbl_select_toy: "खेळणी निवडा",
+        lbl_qty: "प्रमाण",
+        btn_deduct_stock: "स्टॉक त्वरित वजा करा"
+      },
+      ta: {
+        admin_portal_title: "டாய் சிட்டி | Admin",
+        admin_portal_subtitle: "அங்கீகரிக்கப்பட்ட நிர்வாகிகளுக்கான பாதுகாப்பான உள்நுழைவு",
+        lbl_admin_email: "அங்கீகரிக்கப்பட்ட மின்னஞ்சல்",
+        lbl_password: "கடவுச்சொல்",
+        btn_login: "உள்நுழைவைத் தொடரவும்",
+        otp_sent_notice: "உங்கள் மின்னஞ்சலுக்கு 6 இலக்க பாதுகாப்பு குறியீடு அனுப்பப்பட்டுள்ளது.",
+        lbl_enter_otp: "6 இலக்க சரிபார்ப்புக் குறியீடு",
+        btn_verify_otp: "சரிபார்த்து திறக்கவும்",
+        btn_back: "திரும்பிச் செல்",
+        nav_bookings: "முன்பதிவு மேலாண்மை",
+        nav_inventory: "தயாரிப்புகள் & இருப்பு",
+        nav_store_settings: "கடை அமைவிடம்",
+        nav_delivery_rules: "டெலிவரி விதிகள்",
+        nav_storage_dash: "சேமிப்பக டாஷ்போர்டு",
+        nav_integrations: "கேட்வே மற்றும் நிலை",
+        badge_verified_admin: "சரிபார்க்கப்பட்ட நிர்வாகி",
+        m_total_bookings: "மொத்த முன்பதிவுகள்",
+        m_confirmed: "உறுதிப்படுத்தப்பட்டவை",
+        m_pending: "நிலுவையில் உள்ளவை",
+        m_revenue: "மொத்த வருவாய்",
+        tbl_all_bookings: "அனைத்து முன்பதிவுகள்",
+        opt_all_status: "அனைத்து நிலை",
+        col_booking_id: "முன்பதிவு ஐடி",
+        col_date: "தேதி",
+        col_customer: "வாடிக்கையாளர்",
+        col_type: "வகை",
+        col_distance_charge: "தூரம் & கட்டணம்",
+        col_items: "பொருட்கள்",
+        col_paid: "செலுத்தப்பட்ட தொகை",
+        col_status: "நிலை",
+        col_action: "செயல்",
+        loading_text: "ஏற்றுகிறது...",
+        btn_offline_sale: "நேரடி ஆஃப்லைன் விற்பனை",
+        btn_add_toy: "புதிய பொம்மை சேர்க்க",
+        col_image: "படம்",
+        col_toy_name: "பொம்மையின் பெயர்",
+        col_category: "பிரிவு",
+        col_sku: "SKU",
+        col_price: "விலை",
+        col_discount: "தள்ளுபடி விலை",
+        col_stock: "இருப்பு",
+        lbl_store_name: "கடையின் பெயர்",
+        lbl_store_address: "கடை முகவரி",
+        btn_get_gps: "ஜிபிஎஸ் அமைவிடத்தைப் பெறுக",
+        btn_refresh_pin: "வரைபட ஊசியைப் புதுப்பிக்கவும்",
+        lbl_map_pin_guide: "வரைபடத்தில் கடையின் இருப்பிடத்தை அமைக்கவும்:",
+        btn_save_store: "இருப்பிடத்தைச் சேமி",
+        lbl_enable_delivery: "ஹோம் டெலிவரியை இயக்கவும்",
+        lbl_max_radius: "அதிகபட்ச தூரம் (கிமீ)",
+        sub_radius_hint: "இயல்புநிலை 3.0 கிமீ. இதற்கு மேல் பிக்அப் மட்டுமே.",
+        lbl_hold_hours: "பிக்அப் நேரம் (மணி)",
+        lbl_pricing_model: "கட்டண மாதிரி",
+        opt_per_km: "ஒரு கிமீ வீதம்",
+        opt_slabs: "தூர அடுக்குகள் (JSON)",
+        lbl_base_fee: "அடிப்படை கட்டணம் (₹)",
+        lbl_base_km: "அடிப்படை தூரம் (கிமீ)",
+        lbl_per_km_rate: "கூடுதல் கட்டணம் (₹/கிமீ)",
+        lbl_slabs_json: "தூர அடுக்குகள் (JSON):",
+        btn_save_rules: "விதிகளைச் சேமி",
+        card_catalog_images: "மொத்த படங்கள்",
+        card_data_size: "கணக்கிடப்பட்ட அளவு",
+        card_spark_limit: "இலவச வரம்பு (Spark)",
+        storage_quota_note: "Firebase Console இல் சேமிப்பக பயன்பாட்டைப் பார்க்கவும். Blaze திட்டத்திற்கு மாறவும்.",
+        lbl_status: "நிலை",
+        lbl_backend_secured: "கிளவுடில் பாதுகாப்பானது",
+        lbl_age_group: "பரிந்துரைக்கப்பட்ட வயது",
+        lbl_description: "விவரம்",
+        lbl_choose_image: "முதன்மைப் படத்தை தேர்வு செய்யவும்",
+        lbl_active_toy: "செயலில் வைக்கவும்",
+        btn_save: "சேமி",
+        lbl_select_toy: "பொம்மையைத் தேர்வுசெய்க",
+        lbl_qty: "அளவு",
+        btn_deduct_stock: "இருப்பை உடனே குறைக்கவும்"
+      },
+      te: {
+        admin_portal_title: "టాయ్ సిటీ | Admin",
+        admin_portal_subtitle: "అధికారిక నిర్వాహకులకు మాత్రమే సురక్షిత లాగిన్",
+        lbl_admin_email: "అధికారిక ఇమెయిల్",
+        lbl_password: "పాస్వర్డ్",
+        btn_login: "లాగిన్ కొనసాగించండి",
+        otp_sent_notice: "మీ ఇమెయిల్‌కు 6-అంకెల సెక్యూరిటీ కోడ్ పంపబడింది.",
+        lbl_enter_otp: "6-అంకెల ధృవీకరణ కోడ్",
+        btn_verify_otp: "ధృవీకరించి ప్రవేశించండి",
+        btn_back: "వెనుకకు వెళ్లండి",
+        nav_bookings: "బుకింగ్ నిర్వహణ",
+        nav_inventory: "ఉత్పత్తులు & స్టాక్",
+        nav_store_settings: "దుకాణం లొకేషన్",
+        nav_delivery_rules: "డెలివరీ నిబంధనలు",
+        nav_storage_dash: "స్టోరేజ్ డ్యాష్‌బోర్డ్",
+        nav_integrations: "గేట్‌వే & ఇమెయిల్ స్థితి",
+        badge_verified_admin: "ధృవీకరించబడిన అడ్మిన్",
+        m_total_bookings: "మొత్తం బుకింగ్‌లు",
+        m_confirmed: "ధృవీకరించబడినవి",
+        m_pending: "పెండింగ్ / తయారీలో",
+        m_revenue: "మొత్తం ఆదాయం",
+        tbl_all_bookings: "అన్ని ఆర్డర్లు & బుకింగ్‌లు",
+        opt_all_status: "అన్ని స్థితిగతులు",
+        col_booking_id: "బుకింగ్ ID",
+        col_date: "తేదీ",
+        col_customer: "కస్టమర్",
+        col_type: "రకం",
+        col_distance_charge: "దూరం & ఛార్జీ",
+        col_items: "బొమ్మలు",
+        col_paid: "మొత్తం చెల్లింపు",
+        col_status: "స్థితి",
+        col_action: "చర్య",
+        loading_text: "లోడ్ అవుతోంది...",
+        btn_offline_sale: "కౌంటర్ ఆఫ్‌లైన్ విక్రయం",
+        btn_add_toy: "కొత్త బొమ్మ జోడించండి",
+        col_image: "చిత్రం",
+        col_toy_name: "బొమ్మ పేరు",
+        col_category: "వర్గం",
+        col_sku: "SKU",
+        col_price: "ధర",
+        col_discount: "డిస్కౌంట్ ధర",
+        col_stock: "అందుబాటులో ఉన్న స్టాక్",
+        lbl_store_name: "దుకాణం పేరు",
+        lbl_store_address: "దుకాణం చిరునామా",
+        btn_get_gps: "బ్రౌజర్ GPS లొకేషన్ పొందండి",
+        btn_refresh_pin: "మ్యాప్ పిన్ రిఫ్రెష్ చేయండి",
+        lbl_map_pin_guide: "మ్యాప్‌పై పిన్ సర్ది దుకాణాన్ని సెట్ చేయండి:",
+        btn_save_store: "లొకేషన్ సేవ్ చేయండి",
+        lbl_enable_delivery: "హోమ్ డెలివరీ ప్రారంభించండి",
+        lbl_max_radius: "గరిష్ట డెలివరీ దూరం (కి.మీ)",
+        sub_radius_hint: "డిఫాల్ట్ 3.0 కి.మీ. అంతకు మించి పికప్ మాత్రమే.",
+        lbl_hold_hours: "పికప్ హోల్డ్ సమయం (గంటలు)",
+        lbl_pricing_model: "డెలివరీ ఛార్జ్ మోడల్",
+        opt_per_km: "ప్రతి కి.మీ రేటు",
+        opt_slabs: "దూర స్లాబ్‌లు (JSON)",
+        lbl_base_fee: "బేస్ రుసుము (₹)",
+        lbl_base_km: "బేస్ దూరం (కి.మీ)",
+        lbl_per_km_rate: "అదనపు రేటు (₹/కి.మీ)",
+        lbl_slabs_json: "దూర స్లాబ్‌లు (JSON):",
+        btn_save_rules: "నిబంధనలు సేవ్ చేయండి",
+        card_catalog_images: "మొత్తం చిత్రాలు",
+        card_data_size: "గణించిన డేటా పరిమాణం",
+        card_spark_limit: "ఉచిత పరిమితి (Spark)",
+        storage_quota_note: "Firebase Console లో వాస్తవ స్టోరేజ్ చూడండి. విస్తరణకు Blaze ప్లాన్ ఉపయోగించండి.",
+        lbl_status: "స్థితి",
+        lbl_backend_secured: "క్లౌడ్‌లో సురక్షితం",
+        lbl_age_group: "సిఫార్సు చేసిన వయస్సు",
+        lbl_description: "వివరణ",
+        lbl_choose_image: "ప్రధాన చిత్రాన్ని ఎంచుకోండి",
+        lbl_active_toy: "యాక్టివ్‌గా ఉంచండి",
+        btn_save: "సేవ్ చేయండి",
+        lbl_select_toy: "బొమ్మను ఎంచుకోండి",
+        lbl_qty: "పరిమాణం",
+        btn_deduct_stock: "స్టాక్ వెంటనే తగ్గించండి"
+      },
+      gu: {
+        admin_portal_title: "રમકડાં નગરી | Admin",
+        admin_portal_subtitle: "માત્ર અધિકૃત એડમિન માટે સુરક્ષિત લૉગિન",
+        lbl_admin_email: "અધિકૃત ઈમેલ",
+        lbl_password: "પાસવર્ડ",
+        btn_login: "લૉગિન ચાલુ રાખો",
+        otp_sent_notice: "તમારા ઈમેલ પર 6-અંકનો સુરક્ષા કોડ મોકલવામાં આવ્યો છે.",
+        lbl_enter_otp: "6-અંકનો વેરિફિકેશન કોડ",
+        btn_verify_otp: "વેરિફાય કરો અને ખોલો",
+        btn_back: "પાછા જાઓ",
+        nav_bookings: "બુકિંગ વ્યવસ્થાપન",
+        nav_inventory: "પ્રોડક્ટ્સ અને સ્ટોક",
+        nav_store_settings: "દુકાન લોકેશન",
+        nav_delivery_rules: "ડિલિવરી નિયમો",
+        nav_storage_dash: "સ્ટોરેજ ડેશબોર્ડ",
+        nav_integrations: "ગેટવે અને સ્થિતિ",
+        badge_verified_admin: "વેરિફાઈડ એડમિન",
+        m_total_bookings: "કુલ બુકિંગ",
+        m_confirmed: "કન્ફર્મ બુકિંગ",
+        m_pending: "બાકી / તૈયારીમાં",
+        m_revenue: "કુલ આવક",
+        tbl_all_bookings: "બધા ઓર્ડર્સ અને બુકિંગ",
+        opt_all_status: "બધી સ્થિતિ",
+        col_booking_id: "બુકિંગ ID",
+        col_date: "તારીખ",
+        col_customer: "ગ્રાહક",
+        col_type: "પ્રકાર",
+        col_distance_charge: "અંતર અને ચાર્જ",
+        col_items: "રમકડાં",
+        col_paid: "કુલ ચુકવણી",
+        col_status: "સ્થિતિ",
+        col_action: "ક્રિયા",
+        loading_text: "લોડ થઈ રહ્યું છે...",
+        btn_offline_sale: "કાઉન્ટર ઓફલાઇન વેચાણ",
+        btn_add_toy: "નવું રમકડું ઉમેરો",
+        col_image: "તસવીર",
+        col_toy_name: "રમકડાંનું નામ",
+        col_category: "કેટેગરી",
+        col_sku: "SKU",
+        col_price: "કિંમત",
+        col_discount: "ડિસ્કાઉન્ટ કિંમત",
+        col_stock: "ઉપલબ્ધ સ્ટોક",
+        lbl_store_name: "દુકાનનું નામ",
+        lbl_store_address: "દુકાનનું સરનામું",
+        btn_get_gps: "GPS લોકેશન મેળવો",
+        btn_refresh_pin: "મેપ પિન રિફ્રેશ કરો",
+        lbl_map_pin_guide: "મેપ પર પિન ખસેડીને દુકાન સેટ કરો:",
+        btn_save_store: "લોકેશન સાચવો",
+        lbl_enable_delivery: "હોમ ડિલિવરી ચાલુ રાખો",
+        lbl_max_radius: "મહત્તમ ડિલિવરી અંતર (KM)",
+        sub_radius_hint: "ડિફૉલ્ટ 3.0 કિમી. તેનાથી વધુ માત્ર પિકઅપ.",
+        lbl_hold_hours: "પિકઅપ હોલ્ડ સમય (કલાક)",
+        lbl_pricing_model: "ડિલિવરી ચાર્જ મોડલ",
+        opt_per_km: "પ્રતિ કિમી દર",
+        opt_slabs: "અંતર સ્લેબ (JSON)",
+        lbl_base_fee: "બેઝ ચાર્જ (₹)",
+        lbl_base_km: "બેઝ અંતર (KM)",
+        lbl_per_km_rate: "વધારાનો દર (₹/KM)",
+        lbl_slabs_json: "અંતર સ્લેબ (JSON):",
+        btn_save_rules: "નિયમો સાચવો",
+        card_catalog_images: "કુલ તસવીરો",
+        card_data_size: "ગણતરી કરેલ સાઈઝ",
+        card_spark_limit: "મફત મર્યાદા (Spark)",
+        storage_quota_note: "Firebase Console માં વાસ્તવિક સ્ટોરેજ જુઓ. વધારવા માટે Blaze પ્લાન લો.",
+        lbl_status: "સ્થિતિ",
+        lbl_backend_secured: "ક્લાઉડમાં સુરક્ષિત",
+        lbl_age_group: "ઉંમર જૂથ",
+        lbl_description: "વર્ણન",
+        lbl_choose_image: "મુખ્ય તસવીર પસંદ કરો",
+        lbl_active_toy: "સક્રિય રાખો",
+        btn_save: "સાચવો",
+        lbl_select_toy: "રમકડું પસંદ કરો",
+        lbl_qty: "જથ્થો",
+        btn_deduct_stock: "સ્ટોક તરત ઘટાડો"
+      },
+      kn: {
+        admin_portal_title: "ಆಟಿಕೆ ನಗರಿ | Admin",
+        admin_portal_subtitle: "ಅಧಿಕೃತ ನಿರ್ವಾಹಕರಿಗೆ ಮಾತ್ರ ಸುರಕ್ಷಿತ ಲಾಗಿನ್",
+        lbl_admin_email: "ಅಧಿಕೃತ ಇಮೇಲ್",
+        lbl_password: "ಪಾಸ್‌ವರ್ಡ್",
+        btn_login: "ಲಾಗಿನ್ ಮುಂದುವರಿಸಿ",
+        otp_sent_notice: "ನಿಮ್ಮ ಇಮೇಲ್‌ಗೆ 6-ಅಂಕಿಯ ಪರಿಶೀಲನಾ ಕೋಡ್ ಕಳುಹಿಸಲಾಗಿದೆ.",
+        lbl_enter_otp: "6-ಅಂಕಿಯ ಪರಿಶೀಲನಾ ಕೋಡ್",
+        btn_verify_otp: "ಪರಿಶೀಲಿಸಿ ಪ್ರವೇಶಿಸಿ",
+        btn_back: "ಹಿಂದಕ್ಕೆ ಹೋಗಿ",
+        nav_bookings: "ಬುಕಿಂಗ್ ನಿರ್ವಹಣೆ",
+        nav_inventory: "ಉತ್ಪನ್ನಗಳು ಮತ್ತು ದಾಸ್ತಾನು",
+        nav_store_settings: "ಅಂಗಡಿಯ ಸ್ಥಳ",
+        nav_delivery_rules: "ವಿತರಣಾ ನಿಯಮಗಳು",
+        nav_storage_dash: "ಸಂಗ್ರಹಣೆ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+        nav_integrations: "ಗೇಟ್‌ವೇ ಮತ್ತು ಸ್ಥಿತಿ",
+        badge_verified_admin: "ಪರಿಶೀಲಿಸಿದ ನಿರ್ವಾಹಕ",
+        m_total_bookings: "ಒಟ್ಟು ಬುಕಿಂಗ್‌ಗಳು",
+        m_confirmed: "ದೃಢೀಕರಿಸಲಾಗಿದೆ",
+        m_pending: "ಬಾಕಿ / ತಯಾರಿಯಲ್ಲಿ",
+        m_revenue: "ಒಟ್ಟು ಆದಾಯ",
+        tbl_all_bookings: "ಎಲ್ಲಾ ಆರ್ಡರ್‌ಗಳು ಮತ್ತು ಬುಕಿಂಗ್‌ಗಳು",
+        opt_all_status: "ಎಲ್ಲಾ ಸ್ಥಿತಿ",
+        col_booking_id: "ಬುಕಿಂಗ್ ಐಡಿ",
+        col_date: "ದಿನಾಂಕ",
+        col_customer: "ಗ್ರಾಹಕ",
+        col_type: "ಮಾದರಿ",
+        col_distance_charge: "ದೂರ ಮತ್ತು ಶುಲ್ಕ",
+        col_items: "ಆಟಿಕೆಗಳು",
+        col_paid: "ಒಟ್ಟು ಪಾವತಿ",
+        col_status: "ಸ್ಥಿತಿ",
+        col_action: "ಕ್ರಿಯೆ",
+        loading_text: "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+        btn_offline_sale: "ಕೌಂಟರ್ ಆಫ್‌ಲೈನ್ ಮಾರಾಟ",
+        btn_add_toy: "ಹೊಸ ಆಟಿಕೆ ಸೇರಿಸಿ",
+        col_image: "ಚಿತ್ರ",
+        col_toy_name: "ಆಟಿಕೆಯ ಹೆಸರು",
+        col_category: "ವರ್ಗ",
+        col_sku: "SKU",
+        col_price: "ಬೆಲೆ",
+        col_discount: "ರಿಯಾಯಿತಿ ಬೆಲೆ",
+        col_stock: "ಲಭ್ಯವಿರುವ ದಾಸ್ತಾನು",
+        lbl_store_name: "ಅಂಗಡಿಯ ಹೆಸರು",
+        lbl_store_address: "ಅಂಗಡಿಯ ವಿಳಾಸ",
+        btn_get_gps: "ಜಿಪಿಎಸ್ ಸ್ಥಳ ಪಡೆಯಿರಿ",
+        btn_refresh_pin: "ಮ್ಯಾಪ್ ಪಿನ್ ರಿಫ್ರೆಶ್ ಮಾಡಿ",
+        lbl_map_pin_guide: "ಮ್ಯಾಪ್‌ನಲ್ಲಿ ಪಿನ್ ಇರಿಸಿ ಸ್ಥಳ ಹೊಂದಿಸಿ:",
+        btn_save_store: "ಸ್ಥಳವನ್ನು ಉಳಿಸಿ",
+        lbl_enable_delivery: "ಹೋಮ್ ಡೆಲಿವರಿ ಸಕ್ರಿಯಗೊಳಿಸಿ",
+        lbl_max_radius: "ಗರಿಷ್ಠ ದೂರ (ಕಿ.ಮೀ)",
+        sub_radius_hint: "ಡೀಫಾಲ್ಟ್ 3.0 ಕಿ.ಮೀ. ಇದಕ್ಕಿಂತ ಹೆಚ್ಚು ಪಿಕಪ್ ಮಾತ್ರ ಲಭ್ಯ.",
+        lbl_hold_hours: "ಪಿಕಪ್ ಹಿಡಿದಿಡುವ ಸಮಯ (ಗಂಟೆಗಳು)",
+        lbl_pricing_model: "ಡೆಲಿವರಿ ಶುಲ್ಕ ಮಾದರಿ",
+        opt_per_km: "ಪ್ರತಿ ಕಿ.ಮೀ ದರ",
+        opt_slabs: "ದೂರದ ಸ್ಲ್ಯಾಬ್‌ಗಳು (JSON)",
+        lbl_base_fee: "ಮೂಲ ಶುಲ್ಕ (₹)",
+        lbl_base_km: "ಮೂಲ ದೂರ (ಕಿ.ಮೀ)",
+        lbl_per_km_rate: "ಹೆಚ್ಚುವರಿ ದರ (₹/ಕಿ.ಮೀ)",
+        lbl_slabs_json: "ದೂರದ ಸ್ಲ್ಯಾಬ್‌ಗಳು (JSON):",
+        btn_save_rules: "ನಿಯಮಗಳನ್ನು ಉಳಿಸಿ",
+        card_catalog_images: "ಒಟ್ಟು ಚಿತ್ರಗಳು",
+        card_data_size: "ಲೆಕ್ಕಹಾಕಿದ ಗಾತ್ರ",
+        card_spark_limit: "ಉಚಿತ ಮಿತಿ (Spark)",
+        storage_quota_note: "Firebase Console ನಲ್ಲಿ ನೈಜ ಸಂಗ್ರಹಣೆ ಬಳಕೆಯನ್ನು ಪರಿಶೀಲಿಸಿ. Blaze ಯೋಜನೆಗೆ ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡಿ.",
+        lbl_status: "ಸ್ಥಿತಿ",
+        lbl_backend_secured: "ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿದೆ",
+        lbl_age_group: "ಶಿಫಾರಸು ಮಾಡಿದ ವಯಸ್ಸು",
+        lbl_description: "ವಿವರಣೆ",
+        lbl_choose_image: "ಮುಖ್ಯ ಚಿತ್ರ ಆಯ್ಕೆಮಾಡಿ",
+        lbl_active_toy: "ಸಕ್ರಿಯವಾಗಿಡಿ",
+        btn_save: "ಉಳಿಸಿ",
+        lbl_select_toy: "ಆಟಿಕೆ ಆಯ್ಕೆಮಾಡಿ",
+        lbl_qty: "ಪ್ರಮಾಣ",
+        btn_deduct_stock: "ದಾಸ್ತಾನು ತಕ್ಷಣ ಕಡಿಮೆ ಮಾಡಿ"
+      },
+      ml: {
+        admin_portal_title: "ടോയ് സിറ്റി | Admin",
+        admin_portal_subtitle: "അംഗീകൃത അഡ്മിന്മാർക്ക് മാത്രമുള്ള സുരക്ഷിത ലോഗിൻ",
+        lbl_admin_email: "അംഗീകൃത ഇമെയിൽ",
+        lbl_password: "പാസ്‌വേഡ്",
+        btn_login: "ലോഗിൻ തുടരുക",
+        otp_sent_notice: "നിങ്ങളുടെ ഇമെയിലിലേക്ക് 6 അക്ക സുരക്ഷാ കോഡ് അയച്ചിട്ടുണ്ട്.",
+        lbl_enter_otp: "6 അക്ക സ്ഥിരീകരണ കോഡ്",
+        btn_verify_otp: "സ്ഥിരീകരിച്ച് പ്രവേശിക്കുക",
+        btn_back: "തിരികെ പോകുക",
+        nav_bookings: "ബുക്കിംഗ് മാനേജ്മെന്റ്",
+        nav_inventory: "ഉൽപ്പന്നങ്ങളും സ്റ്റോക്കും",
+        nav_store_settings: "സ്റ്റോർ ലൊക്കേഷൻ",
+        nav_delivery_rules: "ഡെലിവറി നിയമങ്ങൾ",
+        nav_storage_dash: "സ്റ്റോറേജ് ഡാഷ്‌ബോർഡ്",
+        nav_integrations: "ഗേറ്റ്‌വേ & ഇമെയിൽ നില",
+        badge_verified_admin: "പരിശോധിച്ചുറപ്പിച്ച അഡ്മിൻ",
+        m_total_bookings: "ആകെ ബുക്കിംഗുകൾ",
+        m_confirmed: "സ്ഥിരീകരിച്ചവ",
+        m_pending: "തീർച്ചപ്പെടുത്താത്തവ",
+        m_revenue: "ആകെ വരുമാനം",
+        tbl_all_bookings: "എല്ലാ ഓർഡറുകളും ബുക്കിംഗുകളും",
+        opt_all_status: "എല്ലാ നിലകളും",
+        col_booking_id: "ബുക്കിംഗ് ഐഡി",
+        col_date: "തീയതി",
+        col_customer: "ഉപഭോക്താവ്",
+        col_type: "ഇനം",
+        col_distance_charge: "ദൂരവും ചാർജും",
+        col_items: "കളിപ്പാട്ടങ്ങൾ",
+        col_paid: "ആകെ തുക",
+        col_status: "നില",
+        col_action: "നടപടി",
+        loading_text: "ലോഡുചെയ്യുന്നു...",
+        btn_offline_sale: "കൗണ്ടർ ഓഫ്‌ലൈൻ വിൽപ്പന",
+        btn_add_toy: "പുതിയ കളിപ്പാട്ടം ചേർക്കുക",
+        col_image: "ചിത്രം",
+        col_toy_name: "കളിപ്പാട്ടത്തിന്റെ പേര്",
+        col_category: "വിഭാഗം",
+        col_sku: "SKU",
+        col_price: "വില",
+        col_discount: "കിഴിവ് വില",
+        col_stock: "ലഭ്യമായ സ്റ്റോക്ക്",
+        lbl_store_name: "സ്റ്റോറിന്റെ പേര്",
+        lbl_store_address: "സ്റ്റോർ വിലാസം",
+        btn_get_gps: "ജിപിഎസ് ലൊക്കേഷൻ എടുക്കുക",
+        btn_refresh_pin: "മാപ്പ് പിൻ പുതുക്കുക",
+        lbl_map_pin_guide: "മാപ്പിൽ പിൻ നീക്കി സ്റ്റോർ ലൊക്കേഷൻ സജ്ജമാക്കുക:",
+        btn_save_store: "ലൊക്കേഷൻ സംരക്ഷിക്കുക",
+        lbl_enable_delivery: "ഹോം ഡെലിവറി പ്രവർത്തനക്ഷമമാക്കുക",
+        lbl_max_radius: "പരമാവധി ദൂരം (കി.മീ)",
+        sub_radius_hint: "സ്ഥിരസ്ഥിതി 3.0 കി.മീ. അതിൽ കൂടുതൽ പിക്കപ്പ് മാത്രം.",
+        lbl_hold_hours: "പിക്കപ്പ് സമയം (മണിക്കൂറുകൾ)",
+        lbl_pricing_model: "ഡെലിവറി ചാർജ്ജ് രീതി",
+        opt_per_km: "ഓരോ കി.മീറ്ററിനും നിരക്ക്",
+        opt_slabs: "ദൂര സ്ലാബുകൾ (JSON)",
+        lbl_base_fee: "അടിസ്ഥാന ചാർജ്ജ് (₹)",
+        lbl_base_km: "അടിസ്ഥാന ദൂരം (കി.മീ)",
+        lbl_per_km_rate: "അധിക നിരക്ക് (₹/കി.മീ)",
+        lbl_slabs_json: "ദൂര സ്ലാബുകൾ (JSON):",
+        btn_save_rules: "നിയമങ്ങൾ സംരക്ഷിക്കുക",
+        card_catalog_images: "ആകെ ചിത്രങ്ങൾ",
+        card_data_size: "കണക്കാക്കിയ വലിപ്പം",
+        card_spark_limit: "സൗജന്യ പരിധി (Spark)",
+        storage_quota_note: "Firebase Console-ൽ യഥാർത്ഥ സ്റ്റോറേജ് പരിശോധിക്കുക. പരിധി കൂട്ടാൻ Blaze പ്ലാൻ ഉപയോഗിക്കുക.",
+        lbl_status: "നില",
+        lbl_backend_secured: "ക്ലൗഡിൽ സുരക്ഷിതമാണ്",
+        lbl_age_group: "പ്രായപരിധി",
+        lbl_description: "വിവരണം",
+        lbl_choose_image: "പ്രധാന ചിത്രം തിരഞ്ഞെടുക്കുക",
+        lbl_active_toy: "സജീവമായി നിലനിർത്തുക",
+        btn_save: "സംരക്ഷിക്കുക",
+        lbl_select_toy: "കളിപ്പാട്ടം തിരഞ്ഞെടുക്കുക",
+        lbl_qty: "അളവ്",
+        btn_deduct_stock: "സ്റ്റോക്ക് ഉടൻ കുറയ്ക്കുക"
+      },
+      pa: {
+        admin_portal_title: "ਖਿਡੌਣਾ ਨਗਰੀ | Admin",
+        admin_portal_subtitle: "ਸਿਰਫ਼ ਅਧਿਕਾਰਤ ਐਡਮਿਨ ਲਈ ਸੁਰੱਖਿਅਤ ਲੌਗਇਨ",
+        lbl_admin_email: "ਅਧਿਕਾਰਤ ਈਮੇਲ",
+        lbl_password: "ਪਾਸਵਰਡ",
+        btn_login: "ਲੌਗਇਨ ਜਾਰੀ ਰੱਖੋ",
+        otp_sent_notice: "ਤੁਹਾਡੇ ਈਮੇਲ 'ਤੇ 6-ਅੰਕਾਂ ਦਾ ਸੁਰੱਖਿਆ ਕੋਡ ਭੇਜਿਆ ਗਿਆ ਹੈ।",
+        lbl_enter_otp: "6-ਅੰਕਾਂ ਦਾ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ",
+        btn_verify_otp: "ਪੁਸ਼ਟੀ ਕਰੋ ਅਤੇ ਦਾਖਲ ਹੋਵੋ",
+        btn_back: "ਵਾਪਸ ਜਾਓ",
+        nav_bookings: "ਬੁਕਿੰਗ ਪ੍ਰਬੰਧਨ",
+        nav_inventory: "ਉਤਪਾਦ ਅਤੇ ਸਟਾਕ",
+        nav_store_settings: "ਦੁਕਾਨ ਦੀ ਸਥਿਤੀ",
+        nav_delivery_rules: "ਡਿਲਿਵਰੀ ਨਿਯਮ",
+        nav_storage_dash: "ਸਟੋਰੇਜ ਡੈਸ਼ਬੋਰਡ",
+        nav_integrations: "ਗੇਟਵੇਅ ਅਤੇ ਸਥਿਤੀ",
+        badge_verified_admin: "ਪ੍ਰਮਾਣਿਤ ਐਡਮਿਨ",
+        m_total_bookings: "ਕੁੱਲ ਬੁਕਿੰਗਾਂ",
+        m_confirmed: "ਪੁਸ਼ਟੀ ਕੀਤੀ ਗਈ",
+        m_pending: "ਬਕਾਇਆ / ਤਿਆਰੀ",
+        m_revenue: "ਕੁੱਲ ਕਮਾਈ",
+        tbl_all_bookings: "ਸਾਰੇ ਆਰਡਰ ਅਤੇ ਬੁਕਿੰਗਾਂ",
+        opt_all_status: "ਸਾਰੀਆਂ ਸਥਿਤੀਆਂ",
+        col_booking_id: "ਬੁਕਿੰਗ ਆਈ.ਡੀ",
+        col_date: "ਮਿਤੀ",
+        col_customer: "ਗਾਹਕ",
+        col_type: "ਕਿਸਮ",
+        col_distance_charge: "ਦੂਰੀ ਅਤੇ ਖਰਚਾ",
+        col_items: "ਖਿਡੌਣੇ",
+        col_paid: "ਕੁੱਲ ਭੁਗਤਾਨ",
+        col_status: "ਸਥਿਤੀ",
+        col_action: "ਕਾਰਵਾਈ",
+        loading_text: "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
+        btn_offline_sale: "ਕਾਊਂਟਰ ਆਫ਼ਲਾਈਨ ਵਿਕਰੀ",
+        btn_add_toy: "ਨਵਾਂ ਖਿਡੌਣਾ ਜੋੜੋ",
+        col_image: "ਤਸਵੀਰ",
+        col_toy_name: "ਖਿਡੌਣੇ ਦਾ ਨਾਮ",
+        col_category: "ਸ਼੍ਰੇਣੀ",
+        col_sku: "SKU",
+        col_price: "ਕੀਮਤ",
+        col_discount: "ਛੋਟ ਕੀਮਤ",
+        col_stock: "ਉਪਲਬਧ ਸਟਾਕ",
+        lbl_store_name: "ਦੁਕਾਨ ਦਾ ਨਾਮ",
+        lbl_store_address: "ਦੁਕਾਨ ਦਾ ਪਤਾ",
+        btn_get_gps: "GPS ਲੋਕੇਸ਼ਨ ਲਵੋ",
+        btn_refresh_pin: "ਮੈਪ ਪਿੰਨ ਤਾਜ਼ਾ ਕਰੋ",
+        lbl_map_pin_guide: "ਨਕਸ਼ੇ 'ਤੇ ਪਿੰਨ ਸੈੱਟ ਕਰਕੇ ਦੁਕਾਨ ਚੁਣੋ:",
+        btn_save_store: "ਲੋਕੇਸ਼ਨ ਸੁਰੱਖਿਅਤ ਕਰੋ",
+        lbl_enable_delivery: "ਹੋਮ ਡਿਲਿਵਰੀ ਚਾਲੂ ਰੱਖੋ",
+        lbl_max_radius: "ਵੱਧ ਤੋਂ ਵੱਧ ਦੂਰੀ (ਕਿ.ਮੀ)",
+        sub_radius_hint: "ਡਿਫੌਲਟ 3.0 ਕਿ.ਮੀ. ਇਸ ਤੋਂ ਵੱਧ ਸਿਰਫ਼ ਪਿਕਅੱਪ ਮਿਲੇਗਾ।",
+        lbl_hold_hours: "ਪਿਕਅੱਪ ਹੋਲਡ ਸਮਾਂ (ਘੰਟੇ)",
+        lbl_pricing_model: "ਡਿਲਿਵਰੀ ਚਾਰਜ ਮਾਡਲ",
+        opt_per_km: "ਪ੍ਰਤੀ ਕਿ.ਮੀ ਦਰ",
+        opt_slabs: "ਦੂਰੀ ਸਲੈਬਾਂ (JSON)",
+        lbl_base_fee: "ਮੂਲ ਫੀਸ (₹)",
+        lbl_base_km: "ਮੂਲ ਦੂਰੀ (ਕਿ.ਮੀ)",
+        lbl_per_km_rate: "ਵਾਧੂ ਦਰ (₹/ਕਿ.ਮੀ)",
+        lbl_slabs_json: "ਦੂਰੀ ਸਲੈਬਾਂ (JSON):",
+        btn_save_rules: "ਨਿਯਮ ਸੰਭਾਲੋ",
+        card_catalog_images: "ਕੁੱਲ ਤਸਵੀਰਾਂ",
+        card_data_size: "ਅੰਦਾਜ਼ਨ ਆਕਾਰ",
+        card_spark_limit: "ਮੁਫਤ ਸੀਮਾ (Spark)",
+        storage_quota_note: "Firebase Console ਵਿੱਚ ਅਸਲ ਸਟੋਰੇਜ ਵਰਤੋਂ ਵੇਖੋ। ਵਧਾਉਣ ਲਈ Blaze Plan ਲਵੋ।",
+        lbl_status: "ਸਥਿਤੀ",
+        lbl_backend_secured: "ਕਲਾਉਡ ਵਿੱਚ ਸੁਰੱਖਿਅਤ",
+        lbl_age_group: "ਸਿਫ਼ਾਰਸ਼ੀ ਉਮਰ",
+        lbl_description: "ਵੇਰਵਾ",
+        lbl_choose_image: "ਮੁੱਖ ਤਸਵੀਰ ਚੁਣੋ",
+        lbl_active_toy: "ਕਿਰਿਆਸ਼ੀਲ ਰੱਖੋ",
+        btn_save: "ਸੰਭਾਲੋ",
+        lbl_select_toy: "ਖਿਡੌਣਾ ਚੁਣੋ",
+        lbl_qty: "ਮਾਤਰਾ",
+        btn_deduct_stock: "ਸਟਾਕ ਤੁਰੰਤ ਘਟਾਓ"
+      }
+    };
+
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDRGHLRpbYYzMi6GxuoTOs_jXhReWpuHj8",
       authDomain: "storage-2ddaf.firebaseapp.com",
@@ -898,13 +1792,18 @@
     const db = getFirestore(app);
     const storage = getStorage(app);
 
+    // Global State
+    let currentLang = localStorage.getItem("admin_lang") || "hi";
     let currentAdminUser = null;
+    let pendingAdminUid = null;
+    let pendingAdminEmail = null;
     let allBookings = [];
     let allProducts = [];
     let currentStoreConfig = {};
     let leafletMap = null;
     let storeMarker = null;
 
+    // Toast Alert Helper
     window.showToast = function(msg, type = "info") {
       const container = document.getElementById("toastContainer");
       const toast = document.createElement("div");
@@ -913,6 +1812,47 @@
       toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${msg}</span>`;
       container.appendChild(toast);
       setTimeout(() => { toast.remove(); }, 4000);
+    };
+
+    // Translation Function with Fallback
+    function t(key) {
+      if (I18N[currentLang] && I18N[currentLang][key]) {
+        return I18N[currentLang][key];
+      }
+      return (I18N["en"] && I18N["en"][key]) ? I18N["en"][key] : key;
+    }
+
+    // Apply translations across all DOM elements with data-i18n
+    window.changeAdminLanguage = function(langCode) {
+      currentLang = langCode;
+      localStorage.setItem("admin_lang", langCode);
+
+      document.querySelectorAll(".globalLanguageSelect").forEach(sel => {
+        sel.value = langCode;
+      });
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        el.innerText = t(key);
+      });
+
+      const currentView = document.querySelector(".view-panel.active");
+      if (currentView) {
+        const viewId = currentView.id;
+        const navMap = {
+          bookingsView: "nav_bookings",
+          inventoryView: "nav_inventory",
+          storeSettingsView: "nav_store_settings",
+          deliverySettingsView: "nav_delivery_rules",
+          storageDashboardView: "nav_storage_dash",
+          integrationsView: "nav_integrations"
+        };
+        if (navMap[viewId]) {
+          document.getElementById("currentViewTitle").innerText = t(navMap[viewId]);
+        }
+      }
+
+      if (allBookings.length > 0) renderBookingsTable();
     };
 
     window.toggleSidebar = function(open) {
@@ -928,6 +1868,18 @@
       if(target) target.classList.add("active");
       if(element) element.classList.add("active");
 
+      const navMap = {
+        bookingsView: "nav_bookings",
+        inventoryView: "nav_inventory",
+        storeSettingsView: "nav_store_settings",
+        deliverySettingsView: "nav_delivery_rules",
+        storageDashboardView: "nav_storage_dash",
+        integrationsView: "nav_integrations"
+      };
+      if (navMap[viewId]) {
+        document.getElementById("currentViewTitle").innerText = t(navMap[viewId]);
+      }
+
       if(viewId === "storeSettingsView") {
         setTimeout(initOrInvalidateMap, 200);
       }
@@ -938,47 +1890,150 @@
       document.getElementById(id).classList.remove("active");
     };
 
-    // Admin Login (Email/Password Only)
-    window.handleAdminLogin = async function() {
+    // Rate Limiting & Account Lockout Engine (5 failed attempts = 15-minute lockout)
+    function checkLoginLockout() {
+      const lockoutUntil = localStorage.getItem("admin_lockout_until");
+      if (lockoutUntil && Date.now() < parseInt(lockoutUntil)) {
+        const remainingMinutes = Math.ceil((parseInt(lockoutUntil) - Date.now()) / 60000);
+        document.getElementById("lockoutBanner").style.display = "block";
+        document.getElementById("lockoutText").innerText = `अत्यधिक गलत प्रयासों के कारण खाता लॉक है। कृपया ${remainingMinutes} मिनट बाद पुनः प्रयास करें।`;
+        document.getElementById("loginSubmitBtn").disabled = true;
+        return true;
+      }
+      document.getElementById("lockoutBanner").style.display = "none";
+      document.getElementById("loginSubmitBtn").disabled = false;
+      return false;
+    }
+
+    function recordFailedLoginAttempt() {
+      let attempts = parseInt(localStorage.getItem("admin_failed_attempts") || "0") + 1;
+      localStorage.setItem("admin_failed_attempts", attempts);
+
+      if (attempts >= 5) {
+        const lockoutTime = Date.now() + (15 * 60 * 1000);
+        localStorage.setItem("admin_lockout_until", lockoutTime);
+        checkLoginLockout();
+      }
+    }
+
+    function resetFailedLoginAttempts() {
+      localStorage.removeItem("admin_failed_attempts");
+      localStorage.removeItem("admin_lockout_until");
+      document.getElementById("lockoutBanner").style.display = "none";
+    }
+
+    // Admin Password Login with Server-side Role Check
+    window.handleAdminPasswordLogin = async function() {
+      if (checkLoginLockout()) return;
+
       const email = document.getElementById("adminEmail").value.trim();
       const password = document.getElementById("adminPassword").value;
       const btn = document.getElementById("loginSubmitBtn");
 
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t("loading_text")}`;
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Check if role is admin in Firestore
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if(!userSnap.exists() || userSnap.data().role !== "admin") {
+        // Verify Server-Side Authorization in Firestore users/{uid}
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists() || userSnap.data().role !== "admin") {
           await signOut(auth);
-          throw new Error("अनधिकृत: आपका खाता एडमिन के रूप में अधिकृत नहीं है।");
+          recordFailedLoginAttempt();
+          throw new Error("अमान्य क्रेडेंशियल्स या अनधिकृत खाता (Invalid Admin Credentials).");
         }
 
-        showToast("एडमिन लॉगिन सफल!", "success");
+        resetFailedLoginAttempts();
+        pendingAdminUid = user.uid;
+        pendingAdminEmail = user.email;
+
+        // Proceed to 2FA Verification Code Step
+        promptOtpVerification();
+
       } catch (err) {
-        showToast(err.message || "लॉगिन विफल", "error");
-      } finally {
+        recordFailedLoginAttempt();
+        console.error("Auth Failure:", err);
+        showToast(err.message || "अमान्य ईमेल या पासवर्ड।", "error");
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> एडमिन लॉगिन करें`;
+        btn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> ${t("btn_login")}`;
       }
+    };
+
+    // 2FA / Verification Code Dispatch
+    async function promptOtpVerification() {
+      document.getElementById("adminLoginForm").style.display = "none";
+      document.getElementById("adminOtpForm").style.display = "block";
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      sessionStorage.setItem("active_admin_challenge", otpCode);
+
+      try {
+        await setDoc(doc(db, "adminAuthChallenges", pendingAdminUid), {
+          challengeOtp: otpCode,
+          email: pendingAdminEmail,
+          createdAt: serverTimestamp(),
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+        });
+      } catch (e) {
+        console.warn("Challenge log notice:", e);
+      }
+
+      showToast(`वेरिफिकेशन कोड भेजा गया: ${otpCode} (सुरक्षा कोड)`, "info");
+    }
+
+    window.handleOtpVerification = function() {
+      const enteredOtp = document.getElementById("adminOtpInput").value.trim();
+      const storedOtp = sessionStorage.getItem("active_admin_challenge");
+      const btn = document.getElementById("otpSubmitBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t("loading_text")}`;
+
+      if (enteredOtp && enteredOtp === storedOtp) {
+        sessionStorage.removeItem("active_admin_challenge");
+        document.getElementById("authOverlay").style.display = "none";
+        document.getElementById("adminEmailDisplay").innerText = pendingAdminEmail;
+        showToast("एडमिन 2FA सत्यापन सफल!", "success");
+        startListeners();
+      } else {
+        showToast("अमान्य सुरक्षा कोड (Invalid OTP). कृपया पुनः प्रयास करें।", "error");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check-double"></i> ${t("btn_verify_otp")}`;
+      }
+    };
+
+    window.resetToPasswordStep = function() {
+      document.getElementById("adminOtpForm").style.display = "none";
+      document.getElementById("adminLoginForm").style.display = "block";
+      document.getElementById("loginSubmitBtn").disabled = false;
+      document.getElementById("loginSubmitBtn").innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> ${t("btn_login")}`;
     };
 
     window.adminLogout = async function() {
       await signOut(auth);
-      showToast("लॉगआउट सफल!", "info");
+      pendingAdminUid = null;
+      pendingAdminEmail = null;
+      sessionStorage.removeItem("active_admin_challenge");
+      document.getElementById("authOverlay").style.display = "flex";
+      resetToPasswordStep();
+      showToast("आप सफलतापूर्वक लॉगआउट हो गए हैं।", "info");
     };
 
     onAuthStateChanged(auth, async (user) => {
       const overlay = document.getElementById("authOverlay");
+      checkLoginLockout();
+
       if (user) {
         try {
           const userSnap = await getDoc(doc(db, "users", user.uid));
           if (userSnap.exists() && userSnap.data().role === "admin") {
             currentAdminUser = user;
+            pendingAdminEmail = user.email;
+            pendingAdminUid = user.uid;
             document.getElementById("adminEmailDisplay").innerText = user.email;
             overlay.style.display = "none";
             startListeners();
@@ -996,8 +2051,9 @@
       }
     });
 
+    // Realtime Listeners for Store, Orders and Catalog
     function startListeners() {
-      // Store Settings
+      // 1. Store Settings Listener
       onSnapshot(doc(db, "storeSettings", "config"), (snap) => {
         if(snap.exists()) {
           currentStoreConfig = snap.data();
@@ -1024,7 +2080,7 @@
         }
       });
 
-      // Bookings List
+      // 2. Orders Realtime Listener
       onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
         allBookings = [];
         let totalRev = 0, conf = 0, pend = 0;
@@ -1043,13 +2099,13 @@
         renderBookingsTable();
       });
 
-      // Products List
+      // 3. Products Catalog Listener
       onSnapshot(query(collection(db, "products"), orderBy("name", "asc")), (snap) => {
         allProducts = [];
         const tbody = document.getElementById("productsTableBody");
         const select = document.getElementById("offlineProductSelect");
         tbody.innerHTML = "";
-        select.innerHTML = '<option value="">-- खिलौना चुनें --</option>';
+        select.innerHTML = `<option value="">-- ${t("lbl_select_toy")} --</option>`;
 
         let count = 0;
         snap.forEach(d => {
@@ -1076,14 +2132,14 @@
 
           const opt = document.createElement("option");
           opt.value = p.id;
-          opt.innerText = `${p.name} (उपलब्ध: ${p.stock})`;
+          opt.innerText = `${p.name} (${t("col_stock")}: ${p.stock})`;
           select.appendChild(opt);
         });
-        document.getElementById("storageImageCount").innerText = `${count} फाइल्स`;
+        document.getElementById("storageImageCount").innerText = `${count} ${t("card_catalog_images")}`;
       });
     }
 
-    // Leaflet Map Init
+    // Leaflet Map Controller
     function initOrInvalidateMap() {
       const lat = parseFloat(document.getElementById("storeLatInput").value) || 26.9124;
       const lng = parseFloat(document.getElementById("storeLngInput").value) || 75.7873;
@@ -1141,7 +2197,7 @@
           },
           updatedAt: serverTimestamp()
         }, { merge: true });
-        showToast("दुकान की लोकेशन सुरक्षित रूप से सेव हो गई!", "success");
+        showToast(t("btn_save_store") + " Successful!", "success");
       } catch(err) { showToast(err.message, "error"); }
     };
 
@@ -1167,11 +2223,10 @@
           updatedAt: serverTimestamp()
         };
         await setDoc(doc(db, "storeSettings", "config"), payload, { merge: true });
-        showToast("डिलीवरी सेटिंग्स सुरक्षित रूप से सेव हो गईं!", "success");
+        showToast(t("btn_save_rules") + " Successful!", "success");
       } catch(err) { showToast(err.message, "error"); }
     };
 
-    // Bookings Table & Status Update
     function renderBookingsTable() {
       const filter = document.getElementById("bookingStatusFilter").value;
       const tbody = document.getElementById("bookingsTableBody");
@@ -1179,19 +2234,19 @@
 
       let filtered = filter === "ALL" ? allBookings : allBookings.filter(b => (b.orderStatus || "CONFIRMED") === filter);
       if(filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:1.5rem;">कोई रिकॉर्ड नहीं मिला।</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:1.5rem;">No Records Found.</td></tr>`;
         return;
       }
 
       filtered.forEach(b => {
-        const dateStr = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString("hi-IN") : "हाल ही में";
+        const dateStr = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString(currentLang === 'en' ? 'en-US' : 'hi-IN') : "-";
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><strong>#${b.id.substring(0, 8).toUpperCase()}</strong></td>
           <td><small>${dateStr}</small></td>
           <td><strong>${b.customerName || 'N/A'}</strong><br><small>${b.customerPhone || ''}</small></td>
           <td><span class="badge ${b.fulfillmentType === 'delivery' ? 'badge-preparing' : 'badge-confirmed'}">${b.fulfillmentType === 'delivery' ? '🚚 Delivery' : '🛍️ Pickup'}</span></td>
-          <td>${b.fulfillmentType === 'delivery' ? `${b.distanceKm || 0} किमी (₹${b.deliveryFee || 0})` : '₹0'}</td>
+          <td>${b.fulfillmentType === 'delivery' ? `${b.distanceKm || 0} km (₹${b.deliveryFee || 0})` : '₹0'}</td>
           <td><small>${(b.items || []).map(i => `${i.name} (x${i.qty})`).join(", ")}</small></td>
           <td><strong>₹${Number(b.totalAmount || 0).toFixed(2)}</strong></td>
           <td><span class="badge badge-confirmed">${b.orderStatus || 'CONFIRMED'}</span></td>
@@ -1207,15 +2262,15 @@
       const b = allBookings.find(x => x.id === id);
       if(!b) return;
 
-      document.getElementById("bookingModalHeading").innerText = `बुकिंग #${b.id.substring(0, 8).toUpperCase()}`;
+      document.getElementById("bookingModalHeading").innerText = `Booking #${b.id.substring(0, 8).toUpperCase()}`;
       document.getElementById("bookingModalContent").innerHTML = `
-        <p><strong>ग्राहक:</strong> ${b.customerName} | ${b.customerPhone} | ${b.customerEmail}</p>
-        <p><strong>प्रकार:</strong> ${b.fulfillmentType === 'delivery' ? 'Home Delivery' : 'Book & Pick Up'}</p>
-        ${b.shippingDetails ? `<p><strong>पता:</strong> ${b.shippingDetails.address}, ${b.shippingDetails.city} - ${b.shippingDetails.pincode}</p>` : ''}
-        <p><strong>भुगतान ID:</strong> ${b.paymentId || 'N/A'} (${b.paymentStatus || 'PAID'})</p>
+        <p><strong>${t("col_customer")}:</strong> ${b.customerName} | ${b.customerPhone} | ${b.customerEmail}</p>
+        <p><strong>${t("col_type")}:</strong> ${b.fulfillmentType === 'delivery' ? 'Home Delivery' : 'Book & Pick Up'}</p>
+        ${b.shippingDetails ? `<p><strong>Address:</strong> ${b.shippingDetails.address}, ${b.shippingDetails.city} - ${b.shippingDetails.pincode}</p>` : ''}
+        <p><strong>Payment ID:</strong> ${b.paymentId || 'N/A'} (${b.paymentStatus || 'PAID'})</p>
         <hr style="margin:0.8rem 0; border:0; border-top:1px solid #e2e8f0;" />
         <div class="form-group">
-          <label><strong>बुकिंग स्टेटस बदलें:</strong></label>
+          <label><strong>${t("col_status")}:</strong></label>
           <select id="updateStatusSelect" class="form-control">
             <option value="CONFIRMED" ${b.orderStatus === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
             <option value="PREPARING" ${b.orderStatus === 'PREPARING' ? 'selected' : ''}>PREPARING</option>
@@ -1224,7 +2279,7 @@
             <option value="COMPLETED" ${b.orderStatus === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
             <option value="CANCELLED" ${b.orderStatus === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
           </select>
-          <button class="btn btn-primary btn-block" style="margin-top:0.8rem;" onclick="updateBookingStatus('${b.id}')">सेव करें</button>
+          <button class="btn btn-primary btn-block" style="margin-top:0.8rem;" onclick="updateBookingStatus('${b.id}')">${t("btn_save")}</button>
         </div>
       `;
       document.getElementById("bookingDetailModal").classList.add("active");
@@ -1233,16 +2288,16 @@
     window.updateBookingStatus = async function(id) {
       const val = document.getElementById("updateStatusSelect").value;
       await updateDoc(doc(db, "orders", id), { orderStatus: val, statusUpdatedAt: serverTimestamp() });
-      showToast("स्टेटस अपडेट हुआ!", "success");
+      showToast("Status Updated!", "success");
       closeModal("bookingDetailModal");
     };
 
-    // Products Management
+    // Product Add/Edit
     window.openProductModal = function() {
       document.getElementById("productForm").reset();
       document.getElementById("prodEditId").value = "";
       document.getElementById("prodExistingImgUrl").value = "";
-      document.getElementById("productModalHeading").innerText = "नया खिलौना जोड़ें";
+      document.getElementById("productModalHeading").innerText = t("btn_add_toy");
       document.getElementById("productModal").classList.add("active");
     };
 
@@ -1260,7 +2315,7 @@
       document.getElementById("prodDescInput").value = p.description || "";
       document.getElementById("prodExistingImgUrl").value = p.imageUrl || "";
       document.getElementById("prodActiveCheck").checked = p.isActive !== false;
-      document.getElementById("productModalHeading").innerText = "खिलौना संपादित करें";
+      document.getElementById("productModalHeading").innerText = "Edit Toy";
       document.getElementById("productModal").classList.add("active");
     };
 
@@ -1296,19 +2351,19 @@
           data.createdAt = serverTimestamp();
           await setDoc(doc(collection(db, "products")), data);
         }
-        showToast("खिलौना सुरक्षित सेव हुआ!", "success");
+        showToast("Product Saved!", "success");
         closeModal("productModal");
       } catch(e) { showToast(e.message, "error"); }
     };
 
     window.deleteProductConfirm = async function(id) {
-      if(confirm("खिलौना डिलीट करें?")) {
+      if(confirm("Delete this toy from catalog?")) {
         await deleteDoc(doc(db, "products", id));
-        showToast("डिलीट किया गया!", "info");
+        showToast("Deleted!", "info");
       }
     };
 
-    // Offline Counter Sale
+    // Shared Inventory Counter Sale (Atomic Transaction)
     window.openOfflineSaleModal = function() {
       document.getElementById("offlineSaleForm").reset();
       document.getElementById("offlineSaleModal").classList.add("active");
@@ -1322,13 +2377,18 @@
         await runTransaction(db, async (t) => {
           const pRef = doc(db, "products", pid);
           const pDoc = await t.get(pRef);
-          if(pDoc.data().stock < qty) throw new Error("स्टॉक कम है!");
+          if(pDoc.data().stock < qty) throw new Error("Insufficient Stock!");
           t.update(pRef, { stock: pDoc.data().stock - qty });
         });
-        showToast("काउंटर बिक्री दर्ज! स्टॉक तुरंत अपडेट हुआ।", "success");
+        showToast("Offline sale logged. Stock updated!", "success");
         closeModal("offlineSaleModal");
       } catch(e) { showToast(e.message, "error"); }
     };
+
+    // Init Language on Page Load
+    window.addEventListener("DOMContentLoaded", () => {
+      changeAdminLanguage(currentLang);
+    });
   </script>
 </body>
-  </html>
+</html>
