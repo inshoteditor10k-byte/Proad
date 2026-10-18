@@ -1,1 +1,1334 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>खिलौना नगरी | Admin Management Console</title>
 
+  <!-- Google Fonts: Baloo 2 & Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Leaflet Map (फ्री ओपन-स्ट्रीट मैप पिन पिकर) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --primary: #3742fa;
+      --primary-hover: #2f3542;
+      --secondary: #ff4757;
+      --accent: #ffa502;
+      --success: #2ed573;
+      --warning: #ffa502;
+      --danger: #ff4757;
+      --dark: #1e293b;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --sidebar-width: 270px;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      --font-heading: 'Baloo 2', cursive;
+      --font-body: 'Nunito', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .brand-title { font-family: var(--font-heading); }
+
+    /* Admin Login Overlay (No Google Login) */
+    #authOverlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      padding: 2.2rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    .auth-card .logo-badge {
+      width: 65px;
+      height: 65px;
+      background: rgba(55, 66, 250, 0.1);
+      color: var(--primary);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group { margin-bottom: 1rem; text-align: left; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(55, 66, 250, 0.15);
+    }
+
+    .btn {
+      border: none;
+      padding: 0.75rem 1.2rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #2b35db; }
+    .btn-secondary { background: #e2e8f0; color: var(--dark); }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-block { width: 100%; }
+
+    /* Sidebar & ☰ Menu Layout */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .sidebar-header {
+      padding: 1.4rem 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #fff;
+    }
+
+    .brand-title i { color: var(--secondary); }
+
+    .nav-list {
+      list-style: none;
+      padding: 1rem 0.8rem;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+    .nav-item.active { color: #fff; background: var(--primary); }
+
+    .sidebar-footer {
+      padding: 1rem 1.2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    /* Main Container */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      transition: margin-left 0.3s;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--dark);
+      cursor: pointer;
+      display: none;
+    }
+
+    .content-area { padding: 1.5rem; flex: 1; }
+
+    .view-panel { display: none; }
+    .view-panel.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.3rem;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .metric-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .metric-info h4 { font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
+    .metric-info .value { font-size: 1.5rem; font-weight: 800; color: var(--dark); font-family: var(--font-heading); }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 1.4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      color: var(--dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #f8fafc; padding: 0.8rem; text-align: left; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 0.85rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover { background: #f8fafc; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #dcfce7; color: #166534; }
+    .badge-preparing { background: #e0e7ff; color: #3730a3; }
+    .badge-ready { background: #fef08a; color: #854d0e; }
+    .badge-out { background: #ffedd5; color: #9a3412; }
+    .badge-completed { background: #d1fae5; color: #065f46; }
+    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+    #storeMap {
+      width: 100%;
+      height: 320px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      margin: 1rem 0;
+      z-index: 10;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .modal-header { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-body { padding: 1.4rem; }
+    .close-btn { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
+
+    /* Toast */
+    #toastContainer {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .toast {
+      background: var(--dark);
+      color: #fff;
+      padding: 0.85rem 1.3rem;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .toast.success { border-left: 5px solid var(--success); }
+    .toast.error { border-left: 5px solid var(--danger); }
+    .toast.info { border-left: 5px solid var(--primary); }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-wrapper { margin-left: 0; }
+      .hamburger-btn { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- 1. Admin Authentication Overlay -->
+  <div id="authOverlay">
+    <div class="auth-card">
+      <div class="logo-badge"><i class="fa-solid fa-lock"></i></div>
+      <h2>खिलौना नगरी | Admin</h2>
+      <p>सुरक्षित एडमिन क्रेडेंशियल्स द्वारा लॉगिन करें</p>
+
+      <form id="adminLoginForm" onsubmit="event.preventDefault(); handleAdminLogin();">
+        <div class="form-group">
+          <label><i class="fa-solid fa-envelope"></i> अधिकृत ईमेल (Admin Email)</label>
+          <input type="email" id="adminEmail" class="form-control" required placeholder="admin@kheloynanagari.com" />
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> पासवर्ड (Password)</label>
+          <input type="password" id="adminPassword" class="form-control" required placeholder="••••••••••••" />
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block" style="margin-top: 1.2rem;">
+          <i class="fa-solid fa-shield-halved"></i> एडमिन लॉगिन करें
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+  <!-- 2. Sidebar Navigation (☰ Menu) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-title">
+        <i class="fa-solid fa-shapes"></i>
+        <span>खिलौना नगरी</span>
+      </div>
+      <button class="close-btn" style="color:#fff; background:rgba(255,255,255,0.1);" onclick="toggleSidebar(false)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="switchView('bookingsView', this)">
+        <i class="fa-solid fa-box-archive"></i>
+        <span>बुकिंग प्रबंधन (Bookings)</span>
+      </li>
+      <li class="nav-item" onclick="switchView('inventoryView', this)">
+        <i class="fa-solid fa-cubes-stacked"></i>
+        <span>प्रोडक्ट्स एवं स्टॉक (Inventory)</span>
+      </li>
+      <li class="nav-item" onclick="switchView('storeSettingsView', this)">
+        <i class="fa-solid fa-store"></i>
+        <span>दुकान लोकेशन (Store Settings)</span>
+      </li>
+      <li class="nav-item" onclick="switchView('deliverySettingsView', this)">
+        <i class="fa-solid fa-truck-fast"></i>
+        <span>डिलीवरी नियम (Delivery Rules)</span>
+      </li>
+      <li class="nav-item" onclick="switchView('storageDashboardView', this)">
+        <i class="fa-solid fa-hard-drive"></i>
+        <span>स्टोरेज डैशबोर्ड (Storage Quota)</span>
+      </li>
+      <li class="nav-item" onclick="switchView('integrationsView', this)">
+        <i class="fa-solid fa-gears"></i>
+        <span>गेटवे व ईमेल स्थिति (Integrations)</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <span id="adminEmailDisplay" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 160px;">Admin</span>
+      <button class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;" onclick="adminLogout()" title="लॉगआउट">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 3. Main Dashboard Wrapper -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <button class="hamburger-btn" onclick="toggleSidebar(true)"><i class="fa-solid fa-bars"></i></button>
+        <h3 id="currentViewTitle" style="font-size: 1.25rem;">ऑनलाइन बुकिंग प्रबंधन</h3>
+      </div>
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.35rem 0.85rem; border-radius:50px; font-size:0.85rem; font-weight:700; color:var(--primary);">
+        <i class="fa-solid fa-shield-check"></i> अधिकृत एडमिन
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- View 1: Bookings Management -->
+      <section id="bookingsView" class="view-panel active">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon" style="background: #e0e7ff; color: var(--primary);"><i class="fa-solid fa-cart-shopping"></i></div>
+            <div class="metric-info"><h4>कुल बुकिंग</h4><div class="value" id="metricTotalBookings">0</div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon" style="background: #dcfce7; color: var(--success);"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="metric-info"><h4>कन्फर्म बुकिंग</h4><div class="value" id="metricConfirmedBookings">0</div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon" style="background: #fef3c7; color: var(--warning);"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="metric-info"><h4>लंबित / तैयारी में</h4><div class="value" id="metricPendingBookings">0</div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon" style="background: #fee2e2; color: var(--danger);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div class="metric-info"><h4>कुल राजस्व</h4><div class="value" id="metricTotalRevenue">₹0</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span><i class="fa-solid fa-list-check"></i> सभी ऑर्डर्स एवं बुकिंग्स</span>
+            <select id="bookingStatusFilter" class="form-control" style="width: auto; padding: 0.4rem 0.8rem;" onchange="filterBookingsTable()">
+              <option value="ALL">सभी स्टेटस</option>
+              <option value="CONFIRMED">CONFIRMED (कन्फर्म)</option>
+              <option value="PREPARING">PREPARING (तैयारी जारी)</option>
+              <option value="READY_FOR_PICKUP">READY FOR PICKUP (पिकअप हेतु तैयार)</option>
+              <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY (डिलीवरी रवाना)</option>
+              <option value="COMPLETED">COMPLETED (पूर्ण)</option>
+              <option value="CANCELLED">CANCELLED (रद्द)</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>बुकिंग ID</th>
+                  <th>तारीख</th>
+                  <th>ग्राहक</th>
+                  <th>प्रकार</th>
+                  <th>दूरी व चार्ज</th>
+                  <th>खिलौने</th>
+                  <th>कुल भुगतान</th>
+                  <th>स्थिति</th>
+                  <th>क्रिया</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTableBody">
+                <tr><td colspan="9" style="text-align:center; padding:1.5rem;">लोड हो रहा है...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: Products & Inventory -->
+      <section id="inventoryView" class="view-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-cubes-stacked"></i> उत्पाद एवं साझा स्टॉक</h2>
+          <div style="display:flex; gap:0.6rem;">
+            <button class="btn btn-secondary" onclick="openOfflineSaleModal()">
+              <i class="fa-solid fa-cash-register"></i> काउंटर ऑफलाइन बिक्री दर्ज करें
+            </button>
+            <button class="btn btn-primary" onclick="openProductModal()">
+              <i class="fa-solid fa-plus"></i> नया खिलौना जोड़ें
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>तस्वीर</th>
+                  <th>खिलौना नाम</th>
+                  <th>श्रेणी</th>
+                  <th>SKU</th>
+                  <th>मूल्य</th>
+                  <th>छूट मूल्य</th>
+                  <th>उपलब्ध स्टॉक</th>
+                  <th>स्थिति</th>
+                  <th>क्रिया</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <tr><td colspan="9" style="text-align:center;">लोड हो रहा है...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 3: Store Settings (☰ Menu -> Store Settings) -->
+      <section id="storeSettingsView" class="view-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-store"></i> दुकान की लोकेशन सेटिंग्स</h2>
+        </div>
+
+        <div class="card">
+          <form id="storeLocationForm" onsubmit="event.preventDefault(); saveStoreLocationSettings();">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div class="form-group">
+                <label>दुकान का नाम</label>
+                <input type="text" id="storeNameInput" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>दुकान का पूरा पता</label>
+                <input type="text" id="storeAddressInput" class="form-control" required />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div class="form-group">
+                <label>Latitude (अक्षांश)</label>
+                <input type="number" step="any" id="storeLatInput" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Longitude (देशांतर)</label>
+                <input type="number" step="any" id="storeLngInput" class="form-control" required />
+              </div>
+            </div>
+
+            <div style="display:flex; gap:0.8rem; margin:0.8rem 0;">
+              <button type="button" class="btn btn-secondary" onclick="fetchAdminCurrentGps()">
+                <i class="fa-solid fa-location-crosshairs"></i> ब्राउज़र से दुकान की GPS लोकेशन लें
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="refreshMapMarker()">
+                <i class="fa-solid fa-map-pin"></i> मैप पिन रिफ्रेश करें
+              </button>
+            </div>
+
+            <label style="font-weight:700; font-size:0.88rem;">मैप पर पिन खिसकाकर दुकान सेट करें:</label>
+            <div id="storeMap"></div>
+
+            <button type="submit" id="saveStoreBtn" class="btn btn-primary" style="margin-top:1rem;">
+              <i class="fa-solid fa-floppy-disk"></i> दुकान की लोकेशन सेव करें
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- View 4: Delivery Settings -->
+      <section id="deliverySettingsView" class="view-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-truck-fast"></i> डिलीवरी एवं दूरी नियम</h2>
+        </div>
+
+        <div class="card">
+          <form id="deliveryRulesForm" onsubmit="event.preventDefault(); saveDeliveryRulesSettings();">
+            <div class="form-group" style="background:#f8fafc; padding:1rem; border-radius:8px; border:1px solid var(--border);">
+              <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
+                <input type="checkbox" id="enableHomeDeliveryToggle" style="width:20px; height:20px;" checked />
+                <span style="font-size:1rem; font-weight:800;">होम डिलीवरी सेवा चालू रखें</span>
+              </label>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+              <div class="form-group">
+                <label>अधिकतम डिलीवरी दायरा (Max KM) *</label>
+                <input type="number" step="0.1" id="maxDeliveryRadiusInput" class="form-control" required value="3.0" min="0.5" />
+                <small style="color:var(--text-muted);">डिफ़ॉल्ट 3.0 किमी। इससे अधिक दूरी पर केवल पिकअप उपलब्ध होगा।</small>
+              </div>
+              <div class="form-group">
+                <label>पिकअप होल्ड समय (घंटों में)</label>
+                <input type="number" id="pickupHoursInput" class="form-control" required value="48" min="1" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>डिलीवरी शुल्क मॉडल</label>
+              <select id="pricingModelSelect" class="form-control" onchange="togglePricingModelFields()">
+                <option value="per_km">प्रति किलोमीटर दर (Per KM with Base Fee)</option>
+                <option value="slabs">दूरी स्लैब्स (Distance Slabs JSON)</option>
+              </select>
+            </div>
+
+            <div id="perKmFields" style="background:#eff6ff; padding:1rem; border-radius:8px; border:1px solid #bfdbfe; margin-bottom:1rem;">
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem;">
+                <div class="form-group">
+                  <label>बेस शुल्क (Base ₹)</label>
+                  <input type="number" id="baseDeliveryFeeInput" class="form-control" value="20" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>बेस दूरी (Base KM)</label>
+                  <input type="number" step="0.1" id="baseKmInput" class="form-control" value="1.0" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>अतिरिक्त दर (₹ / KM)</label>
+                  <input type="number" id="perKmRateInput" class="form-control" value="15" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <div id="slabsFields" style="display:none; background:#f0fdf4; padding:1rem; border-radius:8px; border:1px solid #bbf7d0; margin-bottom:1rem;">
+              <label style="font-weight:700;">दूरी स्लैब्स (JSON):</label>
+              <textarea id="distanceSlabsInput" class="form-control" rows="4">[{"maxKm":1.0,"fee":20},{"maxKm":2.0,"fee":35},{"maxKm":3.0,"fee":50}]</textarea>
+            </div>
+
+            <button type="submit" id="saveDeliveryRulesBtn" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> डिलीवरी नियम सेव करें
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- View 5: Storage Dashboard -->
+      <section id="storageDashboardView" class="view-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-hard-drive"></i> Firebase Storage डैशबोर्ड एवं कोटा</h2>
+        </div>
+
+        <div class="card">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+            <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
+              <small style="color:var(--text-muted); font-weight:700;">कैटलॉग में कुल तस्वीरें</small>
+              <div style="font-size:1.5rem; font-weight:800;" id="storageImageCount">0 फाइल्स</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
+              <small style="color:var(--text-muted); font-weight:700;">गणना किया गया डेटा साइज</small>
+              <div style="font-size:1.5rem; font-weight:800;">Unknown (Unavailable)</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:8px;">
+              <small style="color:var(--text-muted); font-weight:700;">निःशुल्क कोटा सीमा (Spark)</small>
+              <div style="font-size:1.5rem; font-weight:800;">5.0 GB</div>
+            </div>
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:1rem; border-radius:8px; font-size:0.88rem; color:#92400e; line-height:1.5;">
+            <strong>नोट:</strong> Google Cloud Client SDK सुरक्षा कारणों से सीधे स्टोरेज बाइट्स नहीं लौटाता। वास्तविक स्टोरेज कोटा Firebase Console > Storage में देखा जाता है। क्षमता बढ़ाने के लिए Firebase Console में <strong>Blaze Plan</strong> एक्टिवेट करें।
+          </div>
+        </div>
+      </section>
+
+      <!-- View 6: Integrations Safe Status -->
+      <section id="integrationsView" class="view-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-gears"></i> गेटवे व नोटिफिकेशन्स स्थिति</h2>
+        </div>
+        <div class="card">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;">
+            <div style="border:1px solid var(--border); border-radius:8px; padding:1.2rem;">
+              <h3 style="font-size:1.1rem; margin-bottom:0.5rem;"><i class="fa-solid fa-credit-card" style="color:var(--primary);"></i> Razorpay</h3>
+              <p style="font-size:0.85rem; color:var(--text-muted);">स्थिति: <strong>सक्रिय (Configured)</strong></p>
+              <p style="font-size:0.85rem; color:var(--text-muted);">Key Secret: <code>••••••••••••••••</code> (बैकएंड में सुरक्षित)</p>
+            </div>
+            <div style="border:1px solid var(--border); border-radius:8px; padding:1.2rem;">
+              <h3 style="font-size:1.1rem; margin-bottom:0.5rem;"><i class="fa-solid fa-envelope" style="color:var(--secondary);"></i> Gmail Notifications</h3>
+              <p style="font-size:0.85rem; color:var(--text-muted);">स्थिति: <strong>सक्रिय (Configured)</strong></p>
+              <p style="font-size:0.85rem; color:var(--text-muted);">App Password: <code>••••••••••••••••</code> (बैकएंड में सुरक्षित)</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Modal: Product Add/Edit -->
+  <div id="productModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="productModalHeading">खिलौना जोड़ें</h3>
+        <button class="close-btn" onclick="closeModal('productModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="productForm" onsubmit="event.preventDefault(); saveProductData();">
+          <input type="hidden" id="prodEditId" />
+          <input type="hidden" id="prodExistingImgUrl" />
+
+          <div class="form-group">
+            <label>खिलौने का नाम *</label>
+            <input type="text" id="prodNameInput" class="form-control" required />
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
+            <div class="form-group">
+              <label>श्रेणी *</label>
+              <input type="text" id="prodCategoryInput" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>SKU कोड *</label>
+              <input type="text" id="prodSkuInput" class="form-control" required />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem;">
+            <div class="form-group">
+              <label>मूल्य (₹) *</label>
+              <input type="number" id="prodPriceInput" class="form-control" required min="0" />
+            </div>
+            <div class="form-group">
+              <label>छूट मूल्य (₹)</label>
+              <input type="number" id="prodDiscountInput" class="form-control" min="0" />
+            </div>
+            <div class="form-group">
+              <label>स्टॉक *</label>
+              <input type="number" id="prodStockInput" class="form-control" required min="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>उम्र सीमा</label>
+            <input type="text" id="prodAgeInput" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label>विवरण</label>
+            <textarea id="prodDescInput" class="form-control" rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>मुख्य तस्वीर चुनें (Firebase Storage)</label>
+            <input type="file" id="prodImageFile" class="form-control" accept="image/*" />
+          </div>
+
+          <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
+            <input type="checkbox" id="prodActiveCheck" checked style="width:18px; height:18px;" />
+            <label for="prodActiveCheck" style="margin:0;">सक्रिय रखें (Active)</label>
+          </div>
+
+          <button type="submit" id="saveProductBtn" class="btn btn-primary btn-block">
+            <i class="fa-solid fa-floppy-disk"></i> सेव करें
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Offline Walk-in Sale -->
+  <div id="offlineSaleModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cash-register"></i> काउंटर ऑफलाइन बिक्री</h3>
+        <button class="close-btn" onclick="closeModal('offlineSaleModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="offlineSaleForm" onsubmit="event.preventDefault(); handleOfflineSaleSubmit();">
+          <div class="form-group">
+            <label>खिलौना चुनें</label>
+            <select id="offlineProductSelect" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label>मात्रा *</label>
+            <input type="number" id="offlineQtyInput" class="form-control" required min="1" value="1" />
+          </div>
+          <button type="submit" id="offlineSaleBtn" class="btn btn-primary btn-block">
+            <i class="fa-solid fa-check"></i> स्टॉक तुरंत घटाएँ
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Booking Detail & Override -->
+  <div id="bookingDetailModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="bookingModalHeading">बुकिंग विवरण</h3>
+        <button class="close-btn" onclick="closeModal('bookingDetailModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="bookingModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Modular Firebase JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      getDoc, 
+      setDoc, 
+      updateDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      query, 
+      orderBy,
+      runTransaction,
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import { 
+      getStorage, 
+      ref, 
+      uploadBytesResumable, 
+      getDownloadURL 
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDRGHLRpbYYzMi6GxuoTOs_jXhReWpuHj8",
+      authDomain: "storage-2ddaf.firebaseapp.com",
+      projectId: "storage-2ddaf",
+      storageBucket: "storage-2ddaf.firebasestorage.app",
+      messagingSenderId: "76069704115",
+      appId: "1:76069704115:web:5140b0f04364aab6eb7bc6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let currentAdminUser = null;
+    let allBookings = [];
+    let allProducts = [];
+    let currentStoreConfig = {};
+    let leafletMap = null;
+    let storeMarker = null;
+
+    window.showToast = function(msg, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      let icon = type === "success" ? "circle-check" : (type === "error" ? "triangle-exclamation" : "info-circle");
+      toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 4000);
+    };
+
+    window.toggleSidebar = function(open) {
+      document.getElementById("sidebar").classList.toggle("open", open);
+      document.getElementById("sidebarOverlay").classList.toggle("open", open);
+    };
+
+    window.switchView = function(viewId, element) {
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      
+      const target = document.getElementById(viewId);
+      if(target) target.classList.add("active");
+      if(element) element.classList.add("active");
+
+      if(viewId === "storeSettingsView") {
+        setTimeout(initOrInvalidateMap, 200);
+      }
+      toggleSidebar(false);
+    };
+
+    window.closeModal = function(id) {
+      document.getElementById(id).classList.remove("active");
+    };
+
+    // Admin Login (Email/Password Only)
+    window.handleAdminLogin = async function() {
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPassword").value;
+      const btn = document.getElementById("loginSubmitBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी...`;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Check if role is admin in Firestore
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        if(!userSnap.exists() || userSnap.data().role !== "admin") {
+          await signOut(auth);
+          throw new Error("अनधिकृत: आपका खाता एडमिन के रूप में अधिकृत नहीं है।");
+        }
+
+        showToast("एडमिन लॉगिन सफल!", "success");
+      } catch (err) {
+        showToast(err.message || "लॉगिन विफल", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> एडमिन लॉगिन करें`;
+      }
+    };
+
+    window.adminLogout = async function() {
+      await signOut(auth);
+      showToast("लॉगआउट सफल!", "info");
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      const overlay = document.getElementById("authOverlay");
+      if (user) {
+        try {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists() && userSnap.data().role === "admin") {
+            currentAdminUser = user;
+            document.getElementById("adminEmailDisplay").innerText = user.email;
+            overlay.style.display = "none";
+            startListeners();
+          } else {
+            await signOut(auth);
+            overlay.style.display = "flex";
+          }
+        } catch(e) {
+          await signOut(auth);
+          overlay.style.display = "flex";
+        }
+      } else {
+        currentAdminUser = null;
+        overlay.style.display = "flex";
+      }
+    });
+
+    function startListeners() {
+      // Store Settings
+      onSnapshot(doc(db, "storeSettings", "config"), (snap) => {
+        if(snap.exists()) {
+          currentStoreConfig = snap.data();
+          document.getElementById("storeNameInput").value = currentStoreConfig.storeName || "";
+          document.getElementById("storeAddressInput").value = currentStoreConfig.storeAddress || "";
+          if(currentStoreConfig.location) {
+            document.getElementById("storeLatInput").value = currentStoreConfig.location.latitude || "";
+            document.getElementById("storeLngInput").value = currentStoreConfig.location.longitude || "";
+            if(leafletMap && storeMarker) {
+              const pos = [currentStoreConfig.location.latitude, currentStoreConfig.location.longitude];
+              storeMarker.setLatLng(pos);
+              leafletMap.setView(pos, 14);
+            }
+          }
+          document.getElementById("enableHomeDeliveryToggle").checked = currentStoreConfig.enableHomeDelivery !== false;
+          document.getElementById("maxDeliveryRadiusInput").value = currentStoreConfig.maxDeliveryDistanceKm || 3.0;
+          document.getElementById("pickupHoursInput").value = currentStoreConfig.pickupHoldHours || 48;
+          document.getElementById("pricingModelSelect").value = currentStoreConfig.pricingModel || "per_km";
+          if(currentStoreConfig.deliveryPricing) {
+            document.getElementById("baseDeliveryFeeInput").value = currentStoreConfig.deliveryPricing.baseFee ?? 20;
+            document.getElementById("baseKmInput").value = currentStoreConfig.deliveryPricing.baseKm ?? 1.0;
+            document.getElementById("perKmRateInput").value = currentStoreConfig.deliveryPricing.perKmRate ?? 15;
+          }
+        }
+      });
+
+      // Bookings List
+      onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+        allBookings = [];
+        let totalRev = 0, conf = 0, pend = 0;
+        snap.forEach(d => {
+          const b = { id: d.id, ...d.data() };
+          allBookings.push(b);
+          if(b.paymentStatus === "PAID") totalRev += Number(b.totalAmount || 0);
+          if(b.orderStatus === "CONFIRMED" || b.orderStatus === "COMPLETED") conf++;
+          if(b.orderStatus === "PREPARING" || b.orderStatus === "PENDING_PAYMENT") pend++;
+        });
+
+        document.getElementById("metricTotalBookings").innerText = allBookings.length;
+        document.getElementById("metricConfirmedBookings").innerText = conf;
+        document.getElementById("metricPendingBookings").innerText = pend;
+        document.getElementById("metricTotalRevenue").innerText = `₹${totalRev.toFixed(0)}`;
+        renderBookingsTable();
+      });
+
+      // Products List
+      onSnapshot(query(collection(db, "products"), orderBy("name", "asc")), (snap) => {
+        allProducts = [];
+        const tbody = document.getElementById("productsTableBody");
+        const select = document.getElementById("offlineProductSelect");
+        tbody.innerHTML = "";
+        select.innerHTML = '<option value="">-- खिलौना चुनें --</option>';
+
+        let count = 0;
+        snap.forEach(d => {
+          const p = { id: d.id, ...d.data() };
+          allProducts.push(p);
+          if(p.imageUrl) count++;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><img src="${p.imageUrl || 'https://via.placeholder.com/50'}" style="width:45px; height:45px; object-fit:cover; border-radius:6px;" /></td>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.category || '-'}</td>
+            <td><code>${p.sku || '-'}</code></td>
+            <td>₹${p.price}</td>
+            <td>${p.discountedPrice ? `₹${p.discountedPrice}` : '-'}</td>
+            <td><strong>${p.stock}</strong></td>
+            <td><span class="badge ${p.isActive !== false ? 'badge-confirmed' : 'badge-cancelled'}">${p.isActive !== false ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <button class="btn btn-secondary" style="padding:0.3rem 0.5rem;" onclick="editProductModal('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-danger" style="padding:0.3rem 0.5rem;" onclick="deleteProductConfirm('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.innerText = `${p.name} (उपलब्ध: ${p.stock})`;
+          select.appendChild(opt);
+        });
+        document.getElementById("storageImageCount").innerText = `${count} फाइल्स`;
+      });
+    }
+
+    // Leaflet Map Init
+    function initOrInvalidateMap() {
+      const lat = parseFloat(document.getElementById("storeLatInput").value) || 26.9124;
+      const lng = parseFloat(document.getElementById("storeLngInput").value) || 75.7873;
+
+      if(!leafletMap) {
+        leafletMap = L.map("storeMap").setView([lat, lng], 14);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(leafletMap);
+        storeMarker = L.marker([lat, lng], { draggable: true }).addTo(leafletMap);
+
+        storeMarker.on("dragend", function(e) {
+          const pos = e.target.getLatLng();
+          document.getElementById("storeLatInput").value = pos.lat.toFixed(6);
+          document.getElementById("storeLngInput").value = pos.lng.toFixed(6);
+        });
+
+        leafletMap.on("click", function(e) {
+          storeMarker.setLatLng(e.latlng);
+          document.getElementById("storeLatInput").value = e.latlng.lat.toFixed(6);
+          document.getElementById("storeLngInput").value = e.latlng.lng.toFixed(6);
+        });
+      } else {
+        leafletMap.invalidateSize();
+        storeMarker.setLatLng([lat, lng]);
+        leafletMap.setView([lat, lng], 14);
+      }
+    }
+
+    window.refreshMapMarker = function() {
+      const lat = parseFloat(document.getElementById("storeLatInput").value);
+      const lng = parseFloat(document.getElementById("storeLngInput").value);
+      if(!isNaN(lat) && !isNaN(lng) && leafletMap && storeMarker) {
+        storeMarker.setLatLng([lat, lng]);
+        leafletMap.setView([lat, lng], 14);
+      }
+    };
+
+    window.fetchAdminCurrentGps = function() {
+      if(!navigator.geolocation) return showToast("Geolocation उपलब्ध नहीं है", "error");
+      navigator.geolocation.getCurrentPosition(pos => {
+        document.getElementById("storeLatInput").value = pos.coords.latitude.toFixed(6);
+        document.getElementById("storeLngInput").value = pos.coords.longitude.toFixed(6);
+        refreshMapMarker();
+        showToast("GPS लोकेशन सेट की गई!", "success");
+      }, err => showToast(err.message, "error"));
+    };
+
+    window.saveStoreLocationSettings = async function() {
+      try {
+        await setDoc(doc(db, "storeSettings", "config"), {
+          storeName: document.getElementById("storeNameInput").value.trim(),
+          storeAddress: document.getElementById("storeAddressInput").value.trim(),
+          location: {
+            latitude: parseFloat(document.getElementById("storeLatInput").value),
+            longitude: parseFloat(document.getElementById("storeLngInput").value)
+          },
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        showToast("दुकान की लोकेशन सुरक्षित रूप से सेव हो गई!", "success");
+      } catch(err) { showToast(err.message, "error"); }
+    };
+
+    window.togglePricingModelFields = function() {
+      const model = document.getElementById("pricingModelSelect").value;
+      document.getElementById("perKmFields").style.display = model === "per_km" ? "block" : "none";
+      document.getElementById("slabsFields").style.display = model === "slabs" ? "block" : "none";
+    };
+
+    window.saveDeliveryRulesSettings = async function() {
+      try {
+        const model = document.getElementById("pricingModelSelect").value;
+        const payload = {
+          enableHomeDelivery: document.getElementById("enableHomeDeliveryToggle").checked,
+          maxDeliveryDistanceKm: parseFloat(document.getElementById("maxDeliveryRadiusInput").value),
+          pickupHoldHours: parseInt(document.getElementById("pickupHoursInput").value),
+          pricingModel: model,
+          deliveryPricing: {
+            baseFee: parseFloat(document.getElementById("baseDeliveryFeeInput").value) || 0,
+            baseKm: parseFloat(document.getElementById("baseKmInput").value) || 1.0,
+            perKmRate: parseFloat(document.getElementById("perKmRateInput").value) || 0
+          },
+          updatedAt: serverTimestamp()
+        };
+        await setDoc(doc(db, "storeSettings", "config"), payload, { merge: true });
+        showToast("डिलीवरी सेटिंग्स सुरक्षित रूप से सेव हो गईं!", "success");
+      } catch(err) { showToast(err.message, "error"); }
+    };
+
+    // Bookings Table & Status Update
+    function renderBookingsTable() {
+      const filter = document.getElementById("bookingStatusFilter").value;
+      const tbody = document.getElementById("bookingsTableBody");
+      tbody.innerHTML = "";
+
+      let filtered = filter === "ALL" ? allBookings : allBookings.filter(b => (b.orderStatus || "CONFIRMED") === filter);
+      if(filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:1.5rem;">कोई रिकॉर्ड नहीं मिला।</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(b => {
+        const dateStr = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString("hi-IN") : "हाल ही में";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>#${b.id.substring(0, 8).toUpperCase()}</strong></td>
+          <td><small>${dateStr}</small></td>
+          <td><strong>${b.customerName || 'N/A'}</strong><br><small>${b.customerPhone || ''}</small></td>
+          <td><span class="badge ${b.fulfillmentType === 'delivery' ? 'badge-preparing' : 'badge-confirmed'}">${b.fulfillmentType === 'delivery' ? '🚚 Delivery' : '🛍️ Pickup'}</span></td>
+          <td>${b.fulfillmentType === 'delivery' ? `${b.distanceKm || 0} किमी (₹${b.deliveryFee || 0})` : '₹0'}</td>
+          <td><small>${(b.items || []).map(i => `${i.name} (x${i.qty})`).join(", ")}</small></td>
+          <td><strong>₹${Number(b.totalAmount || 0).toFixed(2)}</strong></td>
+          <td><span class="badge badge-confirmed">${b.orderStatus || 'CONFIRMED'}</span></td>
+          <td><button class="btn btn-secondary" style="padding:0.35rem 0.65rem;" onclick="openBookingDetailModal('${b.id}')"><i class="fa-solid fa-eye"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.filterBookingsTable = function() { renderBookingsTable(); };
+
+    window.openBookingDetailModal = function(id) {
+      const b = allBookings.find(x => x.id === id);
+      if(!b) return;
+
+      document.getElementById("bookingModalHeading").innerText = `बुकिंग #${b.id.substring(0, 8).toUpperCase()}`;
+      document.getElementById("bookingModalContent").innerHTML = `
+        <p><strong>ग्राहक:</strong> ${b.customerName} | ${b.customerPhone} | ${b.customerEmail}</p>
+        <p><strong>प्रकार:</strong> ${b.fulfillmentType === 'delivery' ? 'Home Delivery' : 'Book & Pick Up'}</p>
+        ${b.shippingDetails ? `<p><strong>पता:</strong> ${b.shippingDetails.address}, ${b.shippingDetails.city} - ${b.shippingDetails.pincode}</p>` : ''}
+        <p><strong>भुगतान ID:</strong> ${b.paymentId || 'N/A'} (${b.paymentStatus || 'PAID'})</p>
+        <hr style="margin:0.8rem 0; border:0; border-top:1px solid #e2e8f0;" />
+        <div class="form-group">
+          <label><strong>बुकिंग स्टेटस बदलें:</strong></label>
+          <select id="updateStatusSelect" class="form-control">
+            <option value="CONFIRMED" ${b.orderStatus === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
+            <option value="PREPARING" ${b.orderStatus === 'PREPARING' ? 'selected' : ''}>PREPARING</option>
+            <option value="READY_FOR_PICKUP" ${b.orderStatus === 'READY_FOR_PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
+            <option value="OUT_FOR_DELIVERY" ${b.orderStatus === 'OUT_FOR_DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
+            <option value="COMPLETED" ${b.orderStatus === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+            <option value="CANCELLED" ${b.orderStatus === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+          </select>
+          <button class="btn btn-primary btn-block" style="margin-top:0.8rem;" onclick="updateBookingStatus('${b.id}')">सेव करें</button>
+        </div>
+      `;
+      document.getElementById("bookingDetailModal").classList.add("active");
+    };
+
+    window.updateBookingStatus = async function(id) {
+      const val = document.getElementById("updateStatusSelect").value;
+      await updateDoc(doc(db, "orders", id), { orderStatus: val, statusUpdatedAt: serverTimestamp() });
+      showToast("स्टेटस अपडेट हुआ!", "success");
+      closeModal("bookingDetailModal");
+    };
+
+    // Products Management
+    window.openProductModal = function() {
+      document.getElementById("productForm").reset();
+      document.getElementById("prodEditId").value = "";
+      document.getElementById("prodExistingImgUrl").value = "";
+      document.getElementById("productModalHeading").innerText = "नया खिलौना जोड़ें";
+      document.getElementById("productModal").classList.add("active");
+    };
+
+    window.editProductModal = function(id) {
+      const p = allProducts.find(x => x.id === id);
+      if(!p) return;
+      document.getElementById("prodEditId").value = p.id;
+      document.getElementById("prodNameInput").value = p.name || "";
+      document.getElementById("prodCategoryInput").value = p.category || "";
+      document.getElementById("prodSkuInput").value = p.sku || "";
+      document.getElementById("prodPriceInput").value = p.price || "";
+      document.getElementById("prodDiscountInput").value = p.discountedPrice || "";
+      document.getElementById("prodStockInput").value = p.stock ?? 0;
+      document.getElementById("prodAgeInput").value = p.ageRecommendation || "";
+      document.getElementById("prodDescInput").value = p.description || "";
+      document.getElementById("prodExistingImgUrl").value = p.imageUrl || "";
+      document.getElementById("prodActiveCheck").checked = p.isActive !== false;
+      document.getElementById("productModalHeading").innerText = "खिलौना संपादित करें";
+      document.getElementById("productModal").classList.add("active");
+    };
+
+    window.saveProductData = async function() {
+      const editId = document.getElementById("prodEditId").value;
+      const file = document.getElementById("prodImageFile").files[0];
+      let imgUrl = document.getElementById("prodExistingImgUrl").value;
+
+      try {
+        if(file) {
+          const sRef = ref(storage, `products/${Date.now()}_${file.name}`);
+          const res = await uploadBytesResumable(sRef, file);
+          imgUrl = await getDownloadURL(res.ref);
+        }
+
+        const data = {
+          name: document.getElementById("prodNameInput").value.trim(),
+          category: document.getElementById("prodCategoryInput").value.trim(),
+          sku: document.getElementById("prodSkuInput").value.trim(),
+          price: parseFloat(document.getElementById("prodPriceInput").value),
+          discountedPrice: parseFloat(document.getElementById("prodDiscountInput").value) || null,
+          stock: parseInt(document.getElementById("prodStockInput").value),
+          ageRecommendation: document.getElementById("prodAgeInput").value.trim(),
+          description: document.getElementById("prodDescInput").value.trim(),
+          imageUrl: imgUrl,
+          isActive: document.getElementById("prodActiveCheck").checked,
+          updatedAt: serverTimestamp()
+        };
+
+        if(editId) {
+          await updateDoc(doc(db, "products", editId), data);
+        } else {
+          data.createdAt = serverTimestamp();
+          await setDoc(doc(collection(db, "products")), data);
+        }
+        showToast("खिलौना सुरक्षित सेव हुआ!", "success");
+        closeModal("productModal");
+      } catch(e) { showToast(e.message, "error"); }
+    };
+
+    window.deleteProductConfirm = async function(id) {
+      if(confirm("खिलौना डिलीट करें?")) {
+        await deleteDoc(doc(db, "products", id));
+        showToast("डिलीट किया गया!", "info");
+      }
+    };
+
+    // Offline Counter Sale
+    window.openOfflineSaleModal = function() {
+      document.getElementById("offlineSaleForm").reset();
+      document.getElementById("offlineSaleModal").classList.add("active");
+    };
+
+    window.handleOfflineSaleSubmit = async function() {
+      const pid = document.getElementById("offlineProductSelect").value;
+      const qty = parseInt(document.getElementById("offlineQtyInput").value);
+
+      try {
+        await runTransaction(db, async (t) => {
+          const pRef = doc(db, "products", pid);
+          const pDoc = await t.get(pRef);
+          if(pDoc.data().stock < qty) throw new Error("स्टॉक कम है!");
+          t.update(pRef, { stock: pDoc.data().stock - qty });
+        });
+        showToast("काउंटर बिक्री दर्ज! स्टॉक तुरंत अपडेट हुआ।", "success");
+        closeModal("offlineSaleModal");
+      } catch(e) { showToast(e.message, "error"); }
+    };
+  </script>
+</body>
+  </html>
